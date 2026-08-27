@@ -1,0 +1,22 @@
+services:
+  db:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: asd
+      MYSQL_DATABASE: test-jaminan
+      MYSQL_USER: asd
+      MYSQL_PASSWORD: asd
+    ports:
+      - "3306:3306"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: asd
+    ports:
+      - "8080:80"
