@@ -4,23 +4,17 @@ import {
   type Request,
   type Response,
 } from "express";
-import { config } from "./config.ts";
-import jwt from "jsonwebtoken";
 
 import AuthController from "./controller/auth_controller.ts";
-import { Connection } from "./connection.ts";
-import { User } from "./types/user.ts";
+import UserController from "./controller/user_controller.ts";
 
-export const routes = () => {
-  const repoUser = Connection.getRepository(User);
-  const authController = new AuthController(repoUser);
-
-  const router = Router(); 
-  router.get("/health", (req, res) => res.send("hello"));
-  router.post("/auth/login", auth, authController.login);
-  router.post("/auth/register", auth, authController.register);
+export const routes = (authCt: AuthController, userCt: UserController) => {
+  const router = Router();
+  router.get("/health", (_, res) => res.send("hello"));
+  router.post("/auth/login", auth, authCt.login);
+  router.post("/auth/register", auth, authCt.register);
+  router.get("/konsumen", auth, userCt.scanKonsumen);
   router.use(error);
-
   return router;
 };
 

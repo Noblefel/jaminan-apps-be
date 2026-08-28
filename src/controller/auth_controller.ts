@@ -12,15 +12,15 @@ import {
 import { User } from "../types/user.ts";
 import { config } from "../config.ts";
 import { HttpError } from "../types/error.ts";
+import dayjs from "dayjs";
 
 export default class AuthController {
   constructor(private repo: Repository<User>) {}
 
   login = async (req: Request, res: Response) => {
     const input: LoginRequest = req.body;
-
-    const message = validateLogin(input);
-    if (message) throw HttpError(message, 400);
+    const fail = validateLogin(input);
+    if (fail) throw HttpError(fail, 400);
 
     const user = await this.repo.findOne({ where: { email: input.email } });
 
@@ -32,6 +32,7 @@ export default class AuthController {
       id: user.id,
       name: user.name,
       role: user.role,
+      expire: dayjs().add(30, "day").toDate(),
     };
 
     data.token = jwt.sign(data, config.jwtSecret);
@@ -41,9 +42,8 @@ export default class AuthController {
 
   register = async (req: Request, res: Response) => {
     const input: RegisterRequest = req.body;
-
-    const message = validateRegister(input);
-    if (message) return res.status(400).json({ message });
+    const fail = validateRegister(input);
+    if (fail) throw HttpError(fail, 400);
 
     const exist = await this.repo.exists({ where: { email: input.email } });
     if (exist) throw HttpError("email sudah digunakan", 409);

@@ -5,6 +5,7 @@ export interface TokenData {
   name: string;
   role: role;
   token?: string;
+  expire?: Date;
 }
 
 export interface LoginRequest {

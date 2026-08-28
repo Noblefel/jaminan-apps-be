@@ -3,7 +3,6 @@ import {
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
-  Unique,
 } from "typeorm";
 
 export enum role {
@@ -31,4 +30,14 @@ export class User {
 
   @CreateDateColumn()
   created_at: Date;
+}
+
+export interface ScanKonsumenRequest {
+  /** Name/Nik */
+  search: string;
+}
+
+export function validateScanKonsumen(req: ScanKonsumenRequest) {
+  if (req.search.length > 100) return "Nama/Nik terlalu panjang";
+  return "";
 }
