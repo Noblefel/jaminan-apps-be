@@ -16,4 +16,6 @@ export const config = {
     databaseUser: process.env.DATABASE_USER || "root",
     
     databasePassword: process.env.DATABASE_PASSWORD || "",
+
+    minioBucket: process.env.MINIO_BUCKET,
 }

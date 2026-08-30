@@ -9,6 +9,8 @@ export enum role {
   HEAD_MANAGER = "hm",
   ADMIN_LAPORAN = "adm_laporan",
   ADMIN_JAMINAN = "adm_jaminan",
+  MARKETING = "marketing",
+  GUEST = "guest",
 }
 
 @Entity()
@@ -38,6 +40,7 @@ export interface ScanKonsumenRequest {
 }
 
 export function validateScanKonsumen(req: ScanKonsumenRequest) {
+  if (!req.search) return "Keyword kosong";
   if (req.search.length > 100) return "Nama/Nik terlalu panjang";
   return "";
 }

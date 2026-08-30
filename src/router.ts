@@ -5,25 +5,45 @@ import {
   type Response,
 } from "express";
 import jwt from "jsonwebtoken";
+import dayjs from "dayjs";
+import multer from "multer";
 
 import AuthController from "./controller/auth_controller.ts";
 import UserController from "./controller/user_controller.ts";
 import { HttpError } from "./types/error.ts";
 import { config } from "./config.ts";
 import type { TokenData } from "./types/auth.ts";
-import dayjs from "dayjs";
+import type JaminanController from "./controller/jaminan_controller.ts";
 
-export const routes = (authCt: AuthController, userCt: UserController) => {
+export const routes = (
+  authCt: AuthController,
+  userCt: UserController,
+  jaminanCt: JaminanController,
+) => {
   const router = Router();
   router.get("/health", (_, res) => res.send("hello"));
   router.post("/auth/login", authCt.login);
   router.post("/auth/register", authCt.register);
   router.get("/konsumen", auth, userCt.scanKonsumen);
+  
+  router.post(
+    "/jaminan", auth, upload.fields([
+      { name: "jaminan[foto_jaminan]" }, 
+      { name: "jaminan[foto_surat_pinjam]" },
+    ]),
+    jaminanCt.storeJaminan,
+  );
+  
   router.use(error);
   return router;
 };
 
 // middlewares
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 function auth(req: Request, res: Response, next: NextFunction) {
   try {
