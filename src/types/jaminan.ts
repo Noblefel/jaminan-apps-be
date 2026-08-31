@@ -3,10 +3,11 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
+  ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { ClientManual } from "./client";
+import { ClientManual, type ClientType } from "./client";
 import { User } from "./user";
 import dayjs from "dayjs";
 
@@ -18,7 +19,10 @@ export class Jaminan {
   @Column({ type: "varchar", length: 120, unique: true })
   uuid: string; // for qr
 
-  @OneToOne(() => ClientManual)
+  @Column({ type: "unsigned big int", name: "client_id" })
+  client_id: number;
+
+  @OneToOne(() => ClientManual, { cascade: ["insert"] })
   @JoinColumn({ name: "client_id" })
   client: ClientManual;
 
@@ -34,16 +38,16 @@ export class Jaminan {
   @Column({ type: "date" })
   jangka_waktu: Date;
 
-  @Column({ type: "varchar", length: 50 })
+  @Column({ type: "varchar", length: 50, nullable: true })
   foto_jaminan: string;
 
-  @Column({ type: "varchar", length: 50 })
+  @Column({ type: "varchar", length: 50, nullable: true })
   foto_surat_pinjam: string;
 
   @Column({ type: "unsigned big int", name: "marketing_id" })
   marketing_id: number;
 
-  @OneToOne(() => User)
+  @ManyToOne(() => User)
   @JoinColumn({ name: "marketing_id" })
   marketing: User;
 
@@ -64,7 +68,7 @@ export interface StoreJaminanRequest {
     nama: string;
     alamat: string;
     nik: string;
-    tipe: string;
+    tipe: ClientType;
     divisi: string;
     id_card: string;
   };
@@ -87,6 +91,9 @@ export function validateStoreJaminan(req: StoreJaminanRequest) {
 
   if (!c.alamat || !c.divisi || !c.id_card || !c.nama || !c.nik || !c.tipe)
     return "input client masih ada yang kosong";
+
+  if (c.tipe !== "external" && c.tipe !== "internal")
+    return "tipe client tidak benar: " + c.tipe ;
 
   return "";
 }

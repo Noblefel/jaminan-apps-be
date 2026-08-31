@@ -14,10 +14,12 @@ import { HttpError } from "./types/error.ts";
 import { config } from "./config.ts";
 import type { TokenData } from "./types/auth.ts";
 import type JaminanController from "./controller/jaminan_controller.ts";
+import type { ClientController } from "./controller/client_controller.ts";
 
 export const routes = (
   authCt: AuthController,
   userCt: UserController,
+  clientCt: ClientController,
   jaminanCt: JaminanController,
 ) => {
   const router = Router();
@@ -31,8 +33,12 @@ export const routes = (
       { name: "jaminan[foto_jaminan]" }, 
       { name: "jaminan[foto_surat_pinjam]" },
     ]),
-    jaminanCt.storeJaminan,
+    jaminanCt.store,
   );
+
+  router.get("/jaminan", auth, jaminanCt.index)
+
+  router.post("/client/check-nik", auth, clientCt.checkNik)
   
   router.use(error);
   return router;
@@ -60,5 +66,5 @@ function auth(req: Request, res: Response, next: NextFunction) {
 function error(err: any, req: Request, res: Response, next: NextFunction) {
   console.error(err);
   const message = err.message || "terjadi kesalahan sistem";
-  return res.status(err.code ?? 500).json({ message });
+  return res.status(err.statusCode ?? 500).json({ message });
 }

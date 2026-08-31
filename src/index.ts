@@ -10,20 +10,24 @@ import UserController from "./controller/user_controller.ts";
 import JaminanController from "./controller/jaminan_controller.ts";
 import { Jaminan } from "./types/jaminan.ts";
 import { MinioStorage } from "./utils/storage.ts";
+import { ClientManual } from "./types/client.ts";
+import { ClientController } from "./controller/client_controller.ts";
 
 async function start() {
   await Connection.initialize();
 
-  const storage = new MinioStorage();
+  const storage = new MinioStorage(true);
   await storage.createBucket();
 
   const userRepo = Connection.getRepository(User);
+  const clientRepo = Connection.getRepository(ClientManual);
   const jaminanRepo = Connection.getRepository(Jaminan);
 
   const userCt = new UserController(userRepo);
   const authCt = new AuthController(userRepo);
+  const clientCt = new ClientController(clientRepo);
   const jaminanCt = new JaminanController(jaminanRepo, storage);
-  const route = routes(authCt, userCt, jaminanCt);
+  const route = routes(authCt, userCt, clientCt, jaminanCt);
 
   const app = e();
   app.use(cors({ origin: config.allowedOrigins }));

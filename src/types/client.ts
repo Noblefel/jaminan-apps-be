@@ -1,5 +1,13 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 import { Jaminan } from "./jaminan";
+
+export type ClientType = "internal" | "external";
 
 @Entity()
 export class ClientManual {
@@ -12,11 +20,11 @@ export class ClientManual {
   @Column({ type: "varchar", length: 250 })
   alamat: string;
 
-  @Column({ type: "varchar", length: 30 })
+  @Column({ type: "varchar", length: 30, unique: true })
   nik: string;
 
-  @Column({ type: "varchar", length: 30 })
-  tipe: "internal" | "external";
+  @Column({ type: "enum", enum: ["internal", "external"] })
+  tipe: ClientType;
 
   @Column({ type: "varchar", length: 50 })
   divisi: string;
@@ -28,5 +36,5 @@ export class ClientManual {
   created_at?: Date;
 
   @OneToMany(() => Jaminan, (jaminan) => jaminan.client)
-  jaminan?: Jaminan[]
+  jaminan?: Jaminan[];
 }
