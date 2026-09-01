@@ -11,6 +11,15 @@ import { ClientManual, type ClientType } from "./client";
 import { User } from "./user";
 import dayjs from "dayjs";
 
+export type Barang =
+  | "ijazah-sma"
+  | "ijazah-smp"
+  | "ktp"
+  | "shm"
+  | "bpkp"
+  | "akte"
+  | "kk";
+
 @Entity()
 export class Jaminan {
   @PrimaryGeneratedColumn()
@@ -29,8 +38,11 @@ export class Jaminan {
   @Column({ type: "boolean", default: false })
   client_manual: boolean;
 
-  @Column({ type: "varchar", length: 50 })
-  barang: string;
+  @Column({
+    type: "enum",
+    enum: ["ijazah-sma", "ijazah-smp", "ktp", "shm", "bpkp", "akte", "kk"],
+  })
+  barang: Barang;
 
   @Column({ type: "text", nullable: true })
   alasan: string;
@@ -68,7 +80,7 @@ export interface StoreJaminanRequest {
     nama: string;
     alamat: string;
     nik: string;
-    tipe: ClientType;
+    tipe: string;
     divisi: string;
     id_card: string;
     manual: boolean;
@@ -81,7 +93,7 @@ export function validateStoreJaminan(req: StoreJaminanRequest) {
   // formdata convert everything to string
   c.id = Number(c.id);
   // formdata convert everything to string. +typescript membagongkan
-  c.manual = (c.manual as unknown as string)  === "true";
+  c.manual = (c.manual as unknown as string) === "true";
 
   if (!j || !c) return "tidak ada data jaminan & client";
 
