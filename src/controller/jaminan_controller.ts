@@ -1,18 +1,18 @@
+import type { Request, Response } from "express";
 import { Repository } from "typeorm";
-import type { TokenData } from "../types/auth";
+import { randomUUID } from "node:crypto";
 import dayjs from "dayjs";
 
 import { HttpError } from "../types/error";
-import type { Request, Response } from "express";
 import { ClientManual, type ClientType } from "../types/client";
 import type { MinioStorage } from "../utils/storage";
+import type { TokenData } from "../types/auth";
 import {
   Jaminan,
   validateStoreJaminan,
   type Barang,
   type StoreJaminanRequest,
 } from "../types/jaminan";
-import { randomUUID } from "node:crypto";
 
 export default class JaminanController {
   constructor(
@@ -72,11 +72,18 @@ export default class JaminanController {
       relations: { client: true, marketing: true },
     });
 
-    interface Test {
-      ijazah_SMA: string;
-      ijazah_SMP: string;
+    const rawstat = await this.repo
+      .createQueryBuilder("c")
+      .select("barang, COUNT(*) AS total")
+      .groupBy("barang")
+      .getRawMany();
+
+    const stat: any = {};
+
+    for (const rs of rawstat) {
+      stat[rs.barang] = rs.total;
     }
 
-    return res.json({ data: { list, count } });
+    return res.json({ data: { list, count, stat } });
   };
 }
