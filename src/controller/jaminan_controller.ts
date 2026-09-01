@@ -37,6 +37,7 @@ const dummy: ClientManual[] = [
 export default class JaminanController {
   constructor(
     private repo: Repository<Jaminan>,
+    private repoClient: Repository<ClientManual>,
     private storage: MinioStorage,
   ) {}
 
@@ -54,11 +55,15 @@ export default class JaminanController {
     jaminan.jangka_waktu = dayjs(input.jaminan.jangka_waktu).toDate();
     jaminan.uuid = randomUUID();
     jaminan.marketing_id = auth.id;
-    jaminan.client_id = input.client?.client_id!;
 
-    if (!jaminan.client_id) {
+    if (input.client.manual) {
       const client = new ClientManual();
       const c = input.client!;
+
+      // scan konsumen itu ambil dari DB CG & client manual. CG lebih prioritas
+      const b = await this.repoClient.exists({ where: { nik: c.nik } })
+      if (b) throw HttpError("NIK sudah terdaftar, silahkan pakai fitur search konsumen", 409)
+
       client.divisi = c.divisi;
       client.nama = c.alamat;
       client.nik = c.alamat;
@@ -67,6 +72,8 @@ export default class JaminanController {
       client.id_card = c.id_card;
       jaminan.client = client;
       jaminan.client_manual = true;
+    } else {
+      jaminan.client_id = input.client.id
     }
 
     const name = input.client?.nama!;
@@ -75,14 +82,16 @@ export default class JaminanController {
 
     jaminan.foto_jaminan = j!;
     jaminan.foto_surat_pinjam = s!;
-    await this.repo.save(jaminan);
+    const saved = await this.repo.save(jaminan);
 
-    return res.json({ message: "Lol" });
+    return res.json({ message: "Data jaminan berhasil disimpan", data: saved.uuid });
   };
 
   index = async (req: Request, res: Response) => {
-    const [list, count] = await this.repo.findAndCount({ relations: { client: true }})
+    const [list, count] = await this.repo.findAndCount({
+      relations: { client: true, marketing: true },
+    });
 
-    return res.json({ data: { list, count } })
-  }
+    return res.json({ data: { list, count } });
+  };
 }

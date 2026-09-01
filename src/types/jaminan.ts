@@ -22,7 +22,7 @@ export class Jaminan {
   @Column({ type: "unsigned big int", name: "client_id" })
   client_id: number;
 
-  @OneToOne(() => ClientManual, { cascade: ["insert"] })
+  @ManyToOne(() => ClientManual, { cascade: ["insert"] })
   @JoinColumn({ name: "client_id" })
   client: ClientManual;
 
@@ -63,37 +63,42 @@ export interface StoreJaminanRequest {
     foto_jaminan: string;
     foto_surat_pinjam: string;
   };
-  client?: {
-    client_id?: number;
+  client: {
+    id: number;
     nama: string;
     alamat: string;
     nik: string;
     tipe: ClientType;
     divisi: string;
     id_card: string;
+    manual: boolean;
   };
 }
 
 export function validateStoreJaminan(req: StoreJaminanRequest) {
   const j = req.jaminan;
   const c = req.client;
+  // formdata convert everything to string
+  c.id = Number(c.id);
+  // formdata convert everything to string. +typescript membagongkan
+  c.manual = (c.manual as unknown as string)  === "true";
 
   if (!j || !c) return "tidak ada data jaminan & client";
 
-  if (c.client_id && c.nama) return "konflik client id scan dan client manual";
+  if (c.id && c.manual) return "konflik client id scan dan client manual";
 
   if (!j.barang || !j.alasan || !j.jangka_waktu)
     return "input jaminan masih ada yang kosong";
 
   if (!dayjs(j.jangka_waktu).isValid()) return "format jangka waktu salah";
 
-  if (c.client_id) return ""; // pass
+  if (c.id) return ""; // pass
 
   if (!c.alamat || !c.divisi || !c.id_card || !c.nama || !c.nik || !c.tipe)
     return "input client masih ada yang kosong";
 
   if (c.tipe !== "external" && c.tipe !== "internal")
-    return "tipe client tidak benar: " + c.tipe ;
+    return "tipe client tidak benar: " + c.tipe;
 
   return "";
 }

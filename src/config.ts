@@ -17,5 +17,15 @@ export const config = {
     
     databasePassword: process.env.DATABASE_PASSWORD || "",
 
+    storage: Boolean(process.env.STORAGE) || false,
+
+    minioURL: process.env.MINIO_URL || "",
+
+    minioPort: Number(process.env.MINIO_PORT) || 9002,
+
+    minioAccess: process.env.MINIO_ACCESS_KEY || "",
+
+    minioSecret: process.env.MINIO_SECRET_KEY || "",
+
     minioBucket: process.env.MINIO_BUCKET,
 }

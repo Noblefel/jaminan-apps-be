@@ -36,11 +36,11 @@ export class User {
 
 export interface ScanKonsumenRequest {
   /** Name/Nik */
-  search: string;
+  key: string;
 }
 
 export function validateScanKonsumen(req: ScanKonsumenRequest) {
-  if (!req.search) return "Keyword kosong";
-  if (req.search.length > 100) return "Nama/Nik terlalu panjang";
+  if (!req.key) return "Keyword kosong";
+  if (req.key.length > 100) return "Nama/Nik terlalu panjang";
   return "";
 }

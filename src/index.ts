@@ -16,17 +16,17 @@ import { ClientController } from "./controller/client_controller.ts";
 async function start() {
   await Connection.initialize();
 
-  const storage = new MinioStorage(true);
+  const storage = new MinioStorage(config.storage);
   await storage.createBucket();
 
-  const userRepo = Connection.getRepository(User);
-  const clientRepo = Connection.getRepository(ClientManual);
-  const jaminanRepo = Connection.getRepository(Jaminan);
+  const userRp = Connection.getRepository(User);
+  const clientRp = Connection.getRepository(ClientManual);
+  const jaminanRp = Connection.getRepository(Jaminan);
 
-  const userCt = new UserController(userRepo);
-  const authCt = new AuthController(userRepo);
-  const clientCt = new ClientController(clientRepo);
-  const jaminanCt = new JaminanController(jaminanRepo, storage);
+  const userCt = new UserController(userRp);
+  const authCt = new AuthController(userRp);
+  const clientCt = new ClientController(clientRp);
+  const jaminanCt = new JaminanController(jaminanRp, clientRp, storage);
   const route = routes(authCt, userCt, clientCt, jaminanCt);
 
   const app = e();

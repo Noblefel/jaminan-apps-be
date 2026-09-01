@@ -8,17 +8,17 @@ import dayjs from "dayjs";
 export class MinioStorage {
   private client;
 
-  constructor(no_storage = false) {
-    if (no_storage) return;
+  constructor(with_storage = false) {
+    if (with_storage) return;
 
     this.client = new Client({
-      endPoint: "192.182.6.69",
-      accessKey: "tmXfJtNXdtu0Tgp9k1ms",
-      secretKey: "4zp6YVeB23jMTXiddrxpvttsUUupy0ZxMTkQs5Vs",
+      endPoint: config.minioURL,
+      accessKey: config.minioAccess,
+      secretKey: config.minioSecret,
       region: "us-east-1",
       pathStyle: true,
       useSSL: false,
-      port: 9002,
+      port: config.minioPort,
     });
   }
 

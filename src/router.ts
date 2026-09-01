@@ -27,19 +27,18 @@ export const routes = (
   router.post("/auth/login", authCt.login);
   router.post("/auth/register", authCt.register);
   router.get("/konsumen", auth, userCt.scanKonsumen);
-  
-  router.post(
-    "/jaminan", auth, upload.fields([
-      { name: "jaminan[foto_jaminan]" }, 
-      { name: "jaminan[foto_surat_pinjam]" },
-    ]),
-    jaminanCt.store,
-  );
 
-  router.get("/jaminan", auth, jaminanCt.index)
+  const jaminanField = [
+    { name: "jaminan[foto_jaminan]" },
+    { name: "jaminan[foto_surat_pinjam]" },
+  ];
 
-  router.post("/client/check-nik", auth, clientCt.checkNik)
-  
+  router.post("/jaminan", auth, upload.fields(jaminanField), jaminanCt.store);
+  router.get("/jaminan", auth, jaminanCt.index);
+
+  // router.post("/client/check-nik", auth, clientCt.checkNik);
+  router.get("/client/search", auth, clientCt.search);
+
   router.use(error);
   return router;
 };

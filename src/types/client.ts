@@ -38,3 +38,13 @@ export class ClientManual {
   @OneToMany(() => Jaminan, (jaminan) => jaminan.client)
   jaminan?: Jaminan[];
 }
+
+export interface ScanKonsumenRequest {
+  key: string;
+}
+
+export function validateScanKonsumen(req: ScanKonsumenRequest) {
+  if (!req || !req.key) return "keyword search masih kosong";
+  if (req.key.length > 100) return "keyword search terlalu panjang";
+  return "";
+}
