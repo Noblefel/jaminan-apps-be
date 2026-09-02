@@ -28,20 +28,14 @@ export const routes = (
   router.get("/health", (_, res) => res.send("hello"));
   router.post("/auth/login", authCt.login);
   router.post("/auth/register", authCt.register);
-  router.get("/konsumen", auth, userCt.scanKonsumen);
 
-  const jaminanField = [
-    { name: "jaminan[foto_jaminan]" },
-    { name: "jaminan[foto_surat_pinjam]" },
-  ];
-
-  router.post("/jaminan", auth, upload.fields(jaminanField), jaminanCt.store);
   router.get("/jaminan", auth, jaminanCt.index);
+  router.post("/jaminan", auth, upload.fields(jaminanField), jaminanCt.store);
+  router.put("/jaminan/:id", auth, upload.fields(jaminanFieldEdit), jaminanCt.put);
 
-  // router.post("/client/check-nik", auth, clientCt.checkNik);
   router.get("/client/search", auth, clientCt.search);
 
-  router.get("/storage/*path", storageCt.get)
+  router.get("/storage/*path", storageCt.get);
   router.use(error);
   return router;
 };
@@ -70,3 +64,15 @@ function error(err: any, req: Request, res: Response, next: NextFunction) {
   const message = err.message || "terjadi kesalahan sistem";
   return res.status(err.statusCode ?? 500).json({ message });
 }
+
+// upload fields
+
+const jaminanFieldEdit = [
+  { name: "foto_jaminan" },
+  { name: "foto_surat_pinjam" },
+];
+
+const jaminanField = [
+  { name: "jaminan[foto_jaminan]" },
+  { name: "jaminan[foto_surat_pinjam]" },
+];

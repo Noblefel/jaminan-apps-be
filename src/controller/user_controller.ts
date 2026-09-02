@@ -20,18 +20,5 @@ const dummy = [
 export default class UserController {
   constructor(private repo: Repository<User>) {}
 
-  scanKonsumen = async (req: Request, res: Response) => {
-    const input: ScanKonsumenRequest = {
-      search: req.query.search as string, // typescript membagongkan
-    };
-
-    const fail = validateScanKonsumen(input);
-    if (fail) throw HttpError(fail, 400);
-
-    const konsumen = dummy.filter((data) =>
-      data.nama.toLowerCase().includes(input.search.toLowerCase()),
-    );
-
-    return res.json({ data: konsumen });
-  };
+ 
 }

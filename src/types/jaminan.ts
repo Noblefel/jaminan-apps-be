@@ -72,8 +72,8 @@ export interface StoreJaminanRequest {
     barang: string;
     alasan: string;
     jangka_waktu: string;
-    foto_jaminan: string;
-    foto_surat_pinjam: string;
+    foto_jaminan: Object | null;
+    foto_surat_pinjam: Object | null;
   };
   client: {
     id: number;
@@ -87,6 +87,7 @@ export interface StoreJaminanRequest {
   };
 }
 
+// prettier-ignore
 export function validateStoreJaminan(req: StoreJaminanRequest) {
   const j = req.jaminan;
   const c = req.client;
@@ -99,7 +100,7 @@ export function validateStoreJaminan(req: StoreJaminanRequest) {
 
   if (c.id && c.manual) return "konflik client id scan dan client manual";
 
-  if (!j.barang || !j.alasan || !j.jangka_waktu)
+  if (!j.barang || !j.alasan || !j.jangka_waktu || !j.foto_jaminan || !j.foto_surat_pinjam)
     return "input jaminan masih ada yang kosong";
 
   if (!dayjs(j.jangka_waktu).isValid()) return "format jangka waktu salah";
@@ -112,8 +113,28 @@ export function validateStoreJaminan(req: StoreJaminanRequest) {
   if (c.tipe !== "external" && c.tipe !== "internal")
     return "tipe client tidak benar: " + c.tipe;
 
-  if (c.tipe == "internal" && (!c.divisi || !c.id_card)) 
-    return "Internal id card dan divisi (PT) masih kosong"
+  if (c.tipe == "internal" && (!c.divisi || !c.id_card))
+    return "Internal id card dan divisi (PT) masih kosong";
 
   return "";
+}
+
+interface EditJaminanRequest {
+  id: number;
+  barang: string;
+  alasan: string;
+  jangka_waktu: string;
+  foto_jaminan: Object | string;
+  foto_surat_pinjam: Object | string;
+}
+
+// prettier-ignore
+export function validateEditJaminan(body: EditJaminanRequest): [EditJaminanRequest, string] {
+  if (!body.barang || !body.alasan || !body.jangka_waktu)
+    return [body, "input jaminan masih ada yang kosong"];
+
+  if (!dayjs(body.jangka_waktu).isValid())
+    return [body, "format jangka waktu salah"];
+
+  return [body, ""];
 }

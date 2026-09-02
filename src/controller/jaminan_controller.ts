@@ -5,10 +5,12 @@ import dayjs from "dayjs";
 
 import { HttpError } from "../types/error";
 import { ClientManual, type ClientType } from "../types/client";
+import { Pagination } from "../utils/pagination";
 import type { MinioStorage } from "../utils/storage";
 import type { TokenData } from "../types/auth";
 import {
   Jaminan,
+  validateEditJaminan,
   validateStoreJaminan,
   type Barang,
   type StoreJaminanRequest,
@@ -68,10 +70,16 @@ export default class JaminanController {
   };
 
   index = async (req: Request, res: Response) => {
-    const [list, count] = await this.repo.findAndCount({
+    const pagination = new Pagination(req);
+
+    const list = await this.repo.find({
       relations: { client: true, marketing: true },
       order: { created_at: "DESC" },
+      skip: pagination.offset,
+      take: pagination.limit,
     });
+
+    pagination.setPages(await this.repo.count());
 
     const rawstat = await this.repo
       .createQueryBuilder("c")
@@ -85,6 +93,48 @@ export default class JaminanController {
       stat[rs.barang] = rs.total;
     }
 
-    return res.json({ data: { list, count, stat } });
+    return res.json({ data: { list, stat, pagination } });
+  };
+
+  put = async (req: Request, res: Response) => {
+    const [input, fail] = validateEditJaminan(req.body);
+    if (fail) throw HttpError(fail, 400);
+
+    const id = Number(req.params.id);
+    const condition = { where: { id }, relations: { client: true } };
+    const jaminan = await this.repo.findOne(condition);
+    if (!jaminan) throw HttpError("not found", 404);
+
+    jaminan.alasan = input.alasan;
+    jaminan.barang = input.barang as Barang;
+    jaminan.jangka_waktu = dayjs(input.jangka_waktu).toDate();
+
+    const name = jaminan.client.nama ?? "deleted_user";
+    const files = req.files as any; // !!!!typescript membagongkan
+
+    // prettier-ignore
+    if (files["foto_jaminan"]) {
+      await this.storage.delete(jaminan.foto_jaminan);
+      const j = await this.storage.put(req, "foto_jaminan", name, "foto_jaminan");
+      jaminan.foto_jaminan = j!
+    }
+
+    if (files["foto_surat_pinjam"]) {
+      await this.storage.delete(jaminan.foto_surat_pinjam);
+      const s = await this.storage.put(
+        req,
+        "foto_surat_pinjam",
+        name,
+        "foto_surat_pinjam",
+      );
+      jaminan.foto_surat_pinjam = s!;
+    }
+
+    const updated = await this.repo.save(jaminan);
+
+    return res.json({
+      message: "Data jaminan berhasil disimpan",
+      data: updated,
+    });
   };
 }

@@ -1,6 +1,6 @@
 import type { Request } from "express";
 import { Client } from "minio";
-import { config } from "../config"; 
+import { config } from "../config";
 import { slug } from "./formatter";
 import path from "node:path";
 import dayjs from "dayjs";
@@ -51,6 +51,11 @@ export class MinioStorage {
 
   async get(path: string) {
     if (!this.client) return;
-    return await this.client.getObject(config.minioBucket!, path)
-  } 
+    return await this.client.getObject(config.minioBucket!, path);
+  }
+
+  async delete(path: string) {
+    if (!this.client) return;
+    await this.client.removeObject(config.minioBucket!, path);
+  }
 }
