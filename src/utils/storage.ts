@@ -9,7 +9,7 @@ export class MinioStorage {
   private client;
 
   constructor(with_storage = false) {
-    if (with_storage) return;
+    if (!with_storage) return;
 
     this.client = new Client({
       endPoint: config.minioURL,
@@ -48,4 +48,9 @@ export class MinioStorage {
 
     return name;
   }
+
+  async get(path: string) {
+    if (!this.client) return;
+    return await this.client.getObject(config.minioBucket!, path)
+  } 
 }

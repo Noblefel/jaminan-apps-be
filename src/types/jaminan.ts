@@ -106,11 +106,14 @@ export function validateStoreJaminan(req: StoreJaminanRequest) {
 
   if (c.id) return ""; // pass
 
-  if (!c.alamat || !c.divisi || !c.id_card || !c.nama || !c.nik || !c.tipe)
+  if (!c.alamat || !c.nama || !c.nik || !c.tipe)
     return "input client masih ada yang kosong";
 
   if (c.tipe !== "external" && c.tipe !== "internal")
     return "tipe client tidak benar: " + c.tipe;
+
+  if (c.tipe == "internal" && (!c.divisi || !c.id_card)) 
+    return "Internal id card dan divisi (PT) masih kosong"
 
   return "";
 }

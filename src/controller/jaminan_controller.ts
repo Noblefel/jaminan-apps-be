@@ -70,6 +70,7 @@ export default class JaminanController {
   index = async (req: Request, res: Response) => {
     const [list, count] = await this.repo.findAndCount({
       relations: { client: true, marketing: true },
+      order: { created_at: "DESC" },
     });
 
     const rawstat = await this.repo

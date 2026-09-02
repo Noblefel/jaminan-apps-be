@@ -1,31 +1,31 @@
 export const config = {
-    port: process.env.PORT || 3000,
-    
-    allowedOrigins: process.env.CORS_ALLOWED_ORIGINS?.split(",") || [],
-    
-    jwtSecret: process.env.JWT_SECRET || "",
+  port: process.env.PORT || 3000,
 
-    database: process.env.DATABASE || "mysql",
+  allowedOrigins: process.env.CORS_ALLOWED_ORIGINS?.split(",") || [],
 
-    databaseName: process.env.DATABASE_NAME || "test-jaminan",
+  jwtSecret: process.env.JWT_SECRET || "",
 
-    databaseHost: process.env.DATABASE_HOST || "localhost",
+  database: process.env.DATABASE || "mysql",
 
-    databasePort: Number(process.env.DATABASE_PORT) || 3306,
+  databaseName: process.env.DATABASE_NAME || "test-jaminan",
 
-    databaseUser: process.env.DATABASE_USER || "root",
-    
-    databasePassword: process.env.DATABASE_PASSWORD || "",
+  databaseHost: process.env.DATABASE_HOST || "localhost",
 
-    storage: Boolean(process.env.STORAGE) || false,
+  databasePort: Number(process.env.DATABASE_PORT) || 3306,
 
-    minioURL: process.env.MINIO_URL || "",
+  databaseUser: process.env.DATABASE_USER || "root",
 
-    minioPort: Number(process.env.MINIO_PORT) || 9002,
+  databasePassword: process.env.DATABASE_PASSWORD || "",
 
-    minioAccess: process.env.MINIO_ACCESS_KEY || "",
+  storage: process.env.STORAGE?.toLowerCase() === "true" || false,
 
-    minioSecret: process.env.MINIO_SECRET_KEY || "",
+  minioURL: process.env.MINIO_URL || "",
 
-    minioBucket: process.env.MINIO_BUCKET,
-}
+  minioPort: Number(process.env.MINIO_PORT) || 9002,
+
+  minioAccess: process.env.MINIO_ACCESS_KEY || "",
+
+  minioSecret: process.env.MINIO_SECRET_KEY || "",
+
+  minioBucket: process.env.MINIO_BUCKET,
+};

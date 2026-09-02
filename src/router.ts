@@ -15,12 +15,14 @@ import { config } from "./config.ts";
 import type { TokenData } from "./types/auth.ts";
 import type JaminanController from "./controller/jaminan_controller.ts";
 import type { ClientController } from "./controller/client_controller.ts";
+import type { StorageController } from "./controller/storage_controller.ts";
 
 export const routes = (
   authCt: AuthController,
   userCt: UserController,
   clientCt: ClientController,
   jaminanCt: JaminanController,
+  storageCt: StorageController,
 ) => {
   const router = Router();
   router.get("/health", (_, res) => res.send("hello"));
@@ -39,6 +41,7 @@ export const routes = (
   // router.post("/client/check-nik", auth, clientCt.checkNik);
   router.get("/client/search", auth, clientCt.search);
 
+  router.get("/storage/*path", storageCt.get)
   router.use(error);
   return router;
 };

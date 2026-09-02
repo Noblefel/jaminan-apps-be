@@ -12,6 +12,7 @@ import { Jaminan } from "./types/jaminan.ts";
 import { MinioStorage } from "./utils/storage.ts";
 import { ClientManual } from "./types/client.ts";
 import { ClientController } from "./controller/client_controller.ts";
+import { StorageController } from "./controller/storage_controller.ts";
 
 async function start() {
   await Connection.initialize();
@@ -27,7 +28,9 @@ async function start() {
   const authCt = new AuthController(userRp);
   const clientCt = new ClientController(clientRp);
   const jaminanCt = new JaminanController(jaminanRp, clientRp, storage);
-  const route = routes(authCt, userCt, clientCt, jaminanCt);
+  const storageCt = new StorageController(storage);
+  
+  const route = routes(authCt, userCt, clientCt, jaminanCt, storageCt);
 
   const app = e();
   app.use(cors({ origin: config.allowedOrigins }));
