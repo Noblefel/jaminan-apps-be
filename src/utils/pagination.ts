@@ -9,8 +9,8 @@ export class Pagination {
   public between: Number[] = [];
 
   constructor(req: Request) {
-    this.page = (req.params["page"] as any) || 1;
-    this.limit = (req.params["limit"] as any) || 10;
+    this.page = (req.query.page as any) || 1;
+    this.limit = (req.query.limit as any) || 10;
 
     this.page = Math.max(this.page, 1);
     this.limit = Math.max(this.limit, 1);

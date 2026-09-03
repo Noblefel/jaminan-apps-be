@@ -70,7 +70,9 @@ export default class JaminanController {
   };
 
   index = async (req: Request, res: Response) => {
+    console.log(req.query.limit)
     const pagination = new Pagination(req);
+
 
     const list = await this.repo.find({
       relations: { client: true, marketing: true },
