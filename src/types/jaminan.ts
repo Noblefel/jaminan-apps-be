@@ -10,6 +10,7 @@ import {
 import { ClientManual, type ClientType } from "./client";
 import { User } from "./user";
 import dayjs from "dayjs";
+import type { Request } from "express";
 
 export type Barang =
   | "ijazah-sma"
@@ -67,7 +68,7 @@ export class Jaminan {
   created_at: Date;
 }
 
-export interface StoreJaminanRequest {
+interface StoreJaminanRequest {
   jaminan: {
     barang: string;
     alasan: string;
@@ -88,35 +89,37 @@ export interface StoreJaminanRequest {
 }
 
 // prettier-ignore
-export function validateStoreJaminan(req: StoreJaminanRequest) {
-  const j = req.jaminan;
-  const c = req.client;
+export function validateStoreJaminan(req: Request): [StoreJaminanRequest, string] {
+  const body = req.body;
+  const j = body.jaminan;
+  const c = body.client;  
+  const f = req.files as any;
+
+  if (!j || !c) return [body, "tidak ada data jaminan & client"];
   // formdata convert everything to string
-  c.id = Number(c.id);
+  c.id = Number(c?.id || 0);
   // formdata convert everything to string. +typescript membagongkan
-  c.manual = (c.manual as unknown as string) === "true";
+  c.manual = (c.manual as unknown as string) === "true"; 
 
-  if (!j || !c) return "tidak ada data jaminan & client";
-
-  if (c.id && c.manual) return "konflik client id scan dan client manual";
-
-  if (!j.barang || !j.alasan || !j.jangka_waktu || !j.foto_jaminan || !j.foto_surat_pinjam)
-    return "input jaminan masih ada yang kosong";
-
-  if (!dayjs(j.jangka_waktu).isValid()) return "format jangka waktu salah";
-
-  if (c.id) return ""; // pass
-
+  if (c.id && c.manual) 
+    return [body, "konflik client id scan dan client manual"];
+  if (!j.barang || !j.alasan || !j.jangka_waktu)
+    return [body, "input jaminan masih ada yang kosong"];
+  if (!f["jaminan[foto_jaminan]"] || !f["jaminan[foto_surat_pinjam]"])
+    return [body, "wajib memiliki foto jaminan dan surat pinjam"];
+  if (!dayjs(j.jangka_waktu).isValid()) 
+    return [body, "format jangka waktu salah"];
+  
+  if (c.id) return [body, ""]; // pass
+  
   if (!c.alamat || !c.nama || !c.nik || !c.tipe)
-    return "input client masih ada yang kosong";
-
+    return [body, "input client masih ada yang kosong"];
   if (c.tipe !== "external" && c.tipe !== "internal")
-    return "tipe client tidak benar: " + c.tipe;
-
+    return [body, "tipe client tidak benar: " + c.tipe];
   if (c.tipe == "internal" && (!c.divisi || !c.id_card))
-    return "Internal id card dan divisi (PT) masih kosong";
+    return [body, "Internal id card dan divisi (PT) masih kosong"];
 
-  return "";
+  return [body, ""];
 }
 
 interface EditJaminanRequest {
@@ -129,12 +132,10 @@ interface EditJaminanRequest {
 }
 
 // prettier-ignore
-export function validateEditJaminan(body: EditJaminanRequest): [EditJaminanRequest, string] {
-  if (!body.barang || !body.alasan || !body.jangka_waktu)
-    return [body, "input jaminan masih ada yang kosong"];
-
-  if (!dayjs(body.jangka_waktu).isValid())
-    return [body, "format jangka waktu salah"];
-
-  return [body, ""];
+export function validateEditJaminan(req: Request): [EditJaminanRequest, string] {
+  if (!req.body.barang || !req.body.alasan || !req.body.jangka_waktu)
+    return [req.body, "input jaminan masih ada yang kosong"];
+  if (!dayjs(req.body.jangka_waktu).isValid())
+    return [req.body, "format jangka waktu salah"];
+  return [req.body, ""];
 }

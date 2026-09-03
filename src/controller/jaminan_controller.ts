@@ -13,7 +13,6 @@ import {
   validateEditJaminan,
   validateStoreJaminan,
   type Barang,
-  type StoreJaminanRequest,
 } from "../types/jaminan";
 
 export default class JaminanController {
@@ -62,8 +61,7 @@ export default class JaminanController {
 
   // prettier-ignore
   store = async (req: Request, res: Response) => {
-    const input: StoreJaminanRequest = req.body;
-    const fail = validateStoreJaminan(input);
+    const [input, fail] = validateStoreJaminan(req);
     if (fail) throw HttpError(fail, 400);
 
     const auth: TokenData = res.locals.auth;
@@ -107,7 +105,7 @@ export default class JaminanController {
   };
 
   put = async (req: Request, res: Response) => {
-    const [input, fail] = validateEditJaminan(req.body);
+    const [input, fail] = validateEditJaminan(req);
     if (fail) throw HttpError(fail, 400);
 
     const id = Number(req.params.id);
