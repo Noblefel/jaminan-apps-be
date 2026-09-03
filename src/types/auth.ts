@@ -1,9 +1,9 @@
-import type { role } from "./user";
+import type { ROLE } from "./user";
 
 export interface TokenData {
   id: number;
   name: string;
-  role: role;
+  role: ROLE;
   token?: string;
   expire?: Date;
 }

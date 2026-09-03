@@ -4,7 +4,7 @@ import type { Request, Response } from "express";
 import { HttpError } from "../types/error";
 import { validateScanKonsumen, type ScanKonsumenRequest } from "../types/user";
 
-export class ClientController {
+export default class ClientController {
   constructor(private repo: Repository<ClientManual>) {}
 
   checkNik = async (req: Request, res: Response) => {

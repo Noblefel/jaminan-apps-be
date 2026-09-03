@@ -2,20 +2,22 @@ import {
   Router,
   type NextFunction,
   type Request,
+  type RequestHandler,
   type Response,
 } from "express";
 import jwt from "jsonwebtoken";
 import dayjs from "dayjs";
 import multer from "multer";
 
-import AuthController from "./controller/auth_controller.ts";
-import UserController from "./controller/user_controller.ts";
-import { HttpError } from "./types/error.ts";
 import { config } from "./config.ts";
+import { ROLE } from "./types/user.ts";
+import { HttpError } from "./types/error.ts";
 import type { TokenData } from "./types/auth.ts";
+import type AuthController from "./controller/auth_controller.ts";
+import type UserController from "./controller/user_controller.ts";
 import type JaminanController from "./controller/jaminan_controller.ts";
-import type { ClientController } from "./controller/client_controller.ts";
-import type { StorageController } from "./controller/storage_controller.ts";
+import type ClientController from "./controller/client_controller.ts";
+import type StorageController from "./controller/storage_controller.ts";
 
 export const routes = (
   authCt: AuthController,
@@ -29,9 +31,28 @@ export const routes = (
   router.post("/auth/login", authCt.login);
   router.post("/auth/register", authCt.register);
 
-  router.get("/jaminan", auth, jaminanCt.index);
-  router.post("/jaminan", auth, upload.fields(jaminanField), jaminanCt.store);
-  router.put("/jaminan/:id", auth, upload.fields(jaminanFieldEdit), jaminanCt.put);
+  router.get(
+    "/jaminan",
+    auth,
+    guard(ROLE.MARKETING, ROLE.ADMIN_JAMINAN, ROLE.HEAD_MANAGER),
+    jaminanCt.index,
+  );
+
+  router.post(
+    "/jaminan",
+    auth,
+    guard(ROLE.MARKETING, ROLE.HEAD_MANAGER),
+    upload.fields(jaminanField),
+    jaminanCt.store,
+  );
+
+  router.put(
+    "/jaminan/:id",
+    auth,
+    guard(ROLE.MARKETING, ROLE.HEAD_MANAGER),
+    upload.fields(jaminanFieldEdit),
+    jaminanCt.put,
+  );
 
   router.get("/client/search", auth, clientCt.search);
 
@@ -46,6 +67,14 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
 });
+
+const guard = (...roles: ROLE[]): RequestHandler => {
+  return function (req: Request, res: Response, next: NextFunction) {
+    const auth: TokenData = res.locals.auth;
+    if (!roles.includes(auth.role)) throw HttpError(`akses dilarang`, 405);
+    next();
+  };
+};
 
 function auth(req: Request, res: Response, next: NextFunction) {
   try {

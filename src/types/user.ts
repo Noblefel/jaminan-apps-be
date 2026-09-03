@@ -5,7 +5,7 @@ import {
   PrimaryGeneratedColumn,
 } from "typeorm";
 
-export enum role {
+export enum ROLE {
   HEAD_MANAGER = "hm",
   ADMIN_LAPORAN = "adm_laporan",
   ADMIN_JAMINAN = "adm_jaminan",
@@ -27,10 +27,10 @@ export class User {
   @Column({ type: "varchar", length: 254 })
   password: string;
 
-  @Column({ type: "enum", enum: role })
-  role: role;
+  @Column({ type: "enum", enum: ROLE, default: ROLE.GUEST })
+  role: ROLE;
 
-  @CreateDateColumn()
+  @Column({ type: "timestamp" , default: () => 'NOW()', nullable: true })
   created_at: Date;
 }
 

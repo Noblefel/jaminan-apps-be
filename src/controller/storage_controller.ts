@@ -3,7 +3,7 @@ import type { MinioStorage } from "../utils/storage";
 import { pipeline } from "node:stream/promises";
 import path from "node:path";
 
-export class StorageController {
+export default class StorageController {
   constructor(private storage: MinioStorage) {}
 
   get = async (req: Request, res: Response) => {

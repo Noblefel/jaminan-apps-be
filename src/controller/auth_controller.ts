@@ -52,8 +52,8 @@ export default class AuthController {
     user.name = input.name;
     user.email = input.email;
     user.password = bcrypt.hashSync(input.password, 13);
-
-    await this.repo.save(user);
+      
+    await this.repo.save(user); 
 
     return res.json({ message: "Akun berhasil didaftarkan" });
   };

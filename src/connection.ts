@@ -13,5 +13,6 @@ export const Connection = new DataSource({
     database: config.databaseName,
     synchronize: true,
     logging: true,
-    entities: [User, ClientManual, Jaminan]
+    entities: [User, ClientManual, Jaminan],
+    timezone: "Z",
 });
