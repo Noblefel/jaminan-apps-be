@@ -23,6 +23,43 @@ export default class JaminanController {
     private storage: MinioStorage,
   ) {}
 
+  index = async (req: Request, res: Response) => {
+    const pagination = new Pagination(req);
+
+    const query = this.repo
+      .createQueryBuilder("jaminan")
+      .leftJoinAndSelect("jaminan.client", "client")
+      .orderBy("jaminan.created_at", "DESC")
+      .offset(pagination.offset)
+      .limit(pagination.limit);
+
+    if (req.query.barang) {
+      query.andWhere("jaminan.barang = :b", { b: req.query.barang });
+    }
+
+    if (req.query.search) {
+      const like = { s: "%" + (req.query.search as string).trim() + "%" };
+      query.andWhere("(client.nama LIKE :s OR client.nik LIKE :s)", like);
+    }
+
+    pagination.setPages(await query.getCount());
+    const list = await query.getMany();
+
+    const rawstat = await this.repo
+      .createQueryBuilder("c")
+      .select("barang, COUNT(*) AS total")
+      .groupBy("barang")
+      .getRawMany();
+
+    const stat: any = {};
+
+    for (const rs of rawstat) {
+      stat[rs.barang] = rs.total;
+    }
+
+    return res.json({ data: { list, stat, pagination } });
+  };
+
   // prettier-ignore
   store = async (req: Request, res: Response) => {
     const input: StoreJaminanRequest = req.body;
@@ -69,35 +106,6 @@ export default class JaminanController {
     return res.json({ message: "Data jaminan berhasil disimpan", data: saved.uuid });
   };
 
-  index = async (req: Request, res: Response) => {
-    console.log(req.query.limit)
-    const pagination = new Pagination(req);
-
-
-    const list = await this.repo.find({
-      relations: { client: true, marketing: true },
-      order: { created_at: "DESC" },
-      skip: pagination.offset,
-      take: pagination.limit,
-    });
-
-    pagination.setPages(await this.repo.count());
-
-    const rawstat = await this.repo
-      .createQueryBuilder("c")
-      .select("barang, COUNT(*) AS total")
-      .groupBy("barang")
-      .getRawMany();
-
-    const stat: any = {};
-
-    for (const rs of rawstat) {
-      stat[rs.barang] = rs.total;
-    }
-
-    return res.json({ data: { list, stat, pagination } });
-  };
-
   put = async (req: Request, res: Response) => {
     const [input, fail] = validateEditJaminan(req.body);
     if (fail) throw HttpError(fail, 400);
@@ -121,22 +129,15 @@ export default class JaminanController {
       jaminan.foto_jaminan = j!
     }
 
+    // prettier-ignore
     if (files["foto_surat_pinjam"]) {
       await this.storage.delete(jaminan.foto_surat_pinjam);
-      const s = await this.storage.put(
-        req,
-        "foto_surat_pinjam",
-        name,
-        "foto_surat_pinjam",
-      );
+      const s = await this.storage.put(req, "foto_surat_pinjam", name, "foto_surat_pinjam");
       jaminan.foto_surat_pinjam = s!;
     }
 
-    const updated = await this.repo.save(jaminan);
+    const data = await this.repo.save(jaminan);
 
-    return res.json({
-      message: "Data jaminan berhasil disimpan",
-      data: updated,
-    });
+    return res.json({ message: "Data jaminan berhasil disimpan", data });
   };
 }
