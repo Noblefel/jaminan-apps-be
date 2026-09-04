@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="shortcut icon" href="/favicon.png" type="image/x-icon" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR scanned</title>
+
+    <style>
+      :root {
+        font-size: 20px;
+      }
+
+      body {
+        --primary: #003777;
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: #f0f2f8;
+        height: 100dvh;
+        overflow: hidden;
+        position: relative;
+        color: rgb(35, 35, 35);
+        padding: 0 1rem;
+      }
+
+      .center {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 70%;
+      }
+
+      img {
+        margin-bottom: 5rem;
+      }
+
+      p {
+        text-align: center;
+        line-height: 1.5rem;
+        margin: 1rem 0;
+      }
+
+      .date {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary);
+        border-bottom: 5px dashed var(--primary);
+        padding-bottom: 12px;
+      }
+
+      .circle {
+        border-radius: 50%;
+        position: absolute;
+        left: 50%;
+        translate: -50% 0;
+        background-color: var(--primary);
+        width: calc(100% + 300px);
+        max-width: 1500px;
+        height: 400px;
+        bottom: -250px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="center">
+      <img src="/logo.png" alt="logo CG" width="250px" />
+      <% if (it.date) { %>
+
+      <h2>Halo, M***** J****</h2>
+
+      <p><%= it.message %></p>
+
+      <p class="date"><%= it.date %></p>
+
+      <% } else { %>
+
+      <p><%= it.message %></p>
+
+      <% } %>
+    </div>
+
+    <div class="circle"></div>
+  </body>
+</html>

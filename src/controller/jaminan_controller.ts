@@ -36,6 +36,10 @@ export default class JaminanController {
       query.andWhere("jaminan.barang = :b", { b: req.query.barang });
     }
 
+    if (req.query.status) {
+      query.andWhere("jaminan.status = :s", { s: req.query.status });
+    }
+
     if (req.query.search) {
       const like = { s: "%" + (req.query.search as string).trim() + "%" };
       query.andWhere("(client.nama LIKE :s OR client.nik LIKE :s)", like);
@@ -132,7 +136,6 @@ export default class JaminanController {
     }
 
     const data = await this.repo.save(jaminan);
-
     return res.json({ message: "Data jaminan berhasil disimpan", data });
   };
 }

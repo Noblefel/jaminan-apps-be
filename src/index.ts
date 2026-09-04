@@ -1,6 +1,8 @@
 import "reflect-metadata";
 import e from "express";
 import cors from "cors";
+import path from "node:path";
+import { Eta } from "eta";
 import { config } from "./config.ts";
 import { Connection } from "./connection.ts";
 import { routes } from "./router.ts";
@@ -13,6 +15,7 @@ import UserController from "./controller/user_controller.ts";
 import ClientController from "./controller/client_controller.ts";
 import StorageController from "./controller/storage_controller.ts";
 import JaminanController from "./controller/jaminan_controller.ts";
+import ScanController from "./controller/scan_controller.ts";
 
 async function start() {
   await Connection.initialize();
@@ -20,20 +23,27 @@ async function start() {
   const storage = new MinioStorage(config.storage);
   await storage.createBucket();
 
+  const eta = new Eta({
+    views: path.join(import.meta.dirname, "templates"),
+    defaultExtension: ".html",
+  });
+
   const userRp = Connection.getRepository(User);
   const clientRp = Connection.getRepository(ClientManual);
   const jaminanRp = Connection.getRepository(Jaminan);
 
   const userCt = new UserController(userRp);
   const authCt = new AuthController(userRp);
+  const scanCt = new ScanController(jaminanRp, eta);
   const clientCt = new ClientController(clientRp);
   const jaminanCt = new JaminanController(jaminanRp, clientRp, storage);
   const storageCt = new StorageController(storage);
 
-  const route = routes(authCt, userCt, clientCt, jaminanCt, storageCt);
+  const route = routes(authCt, userCt, scanCt, clientCt, jaminanCt, storageCt);
 
   const app = e();
   app.use(cors({ origin: config.allowedOrigins }));
+  app.use(e.static("public"));
   app.use(e.json());
   app.use(route);
 

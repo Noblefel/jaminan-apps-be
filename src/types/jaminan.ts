@@ -22,6 +22,10 @@ export type Barang =
   | "akte"
   | "kk";
 
+export type Status =
+  | "lunas" // diserahakn
+  | "pinjam"; // dalam brankas
+
 @Entity()
 export class Jaminan {
   @PrimaryGeneratedColumn()
@@ -57,6 +61,9 @@ export class Jaminan {
 
   @Column({ type: "varchar", length: 50, nullable: true })
   foto_surat_pinjam: string;
+
+  @Column({ type: "enum", enum: ["lunas", "pinjam"], default: "pinjam" })
+  status: Status;
 
   @Column({ type: "unsigned big int", name: "marketing_id" })
   marketing_id: number;

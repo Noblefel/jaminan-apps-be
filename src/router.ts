@@ -18,10 +18,12 @@ import type UserController from "./controller/user_controller.ts";
 import type JaminanController from "./controller/jaminan_controller.ts";
 import type ClientController from "./controller/client_controller.ts";
 import type StorageController from "./controller/storage_controller.ts";
+import type ScanController from "./controller/scan_controller.ts";
 
 export const routes = (
   authCt: AuthController,
   userCt: UserController,
+  scanCt: ScanController,
   clientCt: ClientController,
   jaminanCt: JaminanController,
   storageCt: StorageController,
@@ -53,9 +55,9 @@ export const routes = (
     upload.fields(jaminanFieldEdit),
     jaminanCt.put,
   );
-
+  
+  router.get("/scan/:uuid", scanCt.scanPublic);
   router.get("/client/search", auth, clientCt.search);
-
   router.get("/storage/*path", storageCt.get);
   router.use(error);
   return router;
