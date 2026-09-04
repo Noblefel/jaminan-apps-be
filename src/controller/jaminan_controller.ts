@@ -61,9 +61,7 @@ export default class JaminanController {
 
   // prettier-ignore
   store = async (req: Request, res: Response) => {
-    const [input, fail] = validateStoreJaminan(req);
-    if (fail) throw HttpError(fail, 400);
-
+    const input = validateStoreJaminan(req);
     const auth: TokenData = res.locals.auth;
 
     const jaminan = new Jaminan();
@@ -105,8 +103,7 @@ export default class JaminanController {
   };
 
   put = async (req: Request, res: Response) => {
-    const [input, fail] = validateEditJaminan(req);
-    if (fail) throw HttpError(fail, 400);
+    const input = validateEditJaminan(req);
 
     const id = Number(req.params.id);
     const condition = { where: { id }, relations: { client: true } };

@@ -30,17 +30,6 @@ export class User {
   @Column({ type: "enum", enum: ROLE, default: ROLE.GUEST })
   role: ROLE;
 
-  @Column({ type: "timestamp" , default: () => 'NOW()', nullable: true })
+  @CreateDateColumn()
   created_at: Date;
-}
-
-export interface ScanKonsumenRequest {
-  /** Name/Nik */
-  key: string;
-}
-
-export function validateScanKonsumen(req: ScanKonsumenRequest) {
-  if (!req.key) return "Keyword kosong";
-  if (req.key.length > 100) return "Nama/Nik terlalu panjang";
-  return "";
 }

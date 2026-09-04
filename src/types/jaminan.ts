@@ -11,6 +11,7 @@ import { ClientManual, type ClientType } from "./client";
 import { User } from "./user";
 import dayjs from "dayjs";
 import type { Request } from "express";
+import { HttpError } from "./error";
 
 export type Barang =
   | "ijazah-sma"
@@ -88,38 +89,36 @@ interface StoreJaminanRequest {
   };
 }
 
-// prettier-ignore
-export function validateStoreJaminan(req: Request): [StoreJaminanRequest, string] {
-  const body = req.body;
-  const j = body.jaminan;
-  const c = body.client;  
+export function validateStoreJaminan(req: Request): StoreJaminanRequest {
+  const j = req.body.jaminan;
+  const c = req.body.client;
   const f = req.files as any;
 
-  if (!j || !c) return [body, "tidak ada data jaminan & client"];
+  if (!j || !c) throw HttpError("tidak ada data jaminan & client", 400);
   // formdata convert everything to string
   c.id = Number(c?.id || 0);
   // formdata convert everything to string. +typescript membagongkan
-  c.manual = (c.manual as unknown as string) === "true"; 
+  c.manual = (c.manual as unknown as string) === "true";
 
-  if (c.id && c.manual) 
-    return [body, "konflik client id scan dan client manual"];
+  if (c.id && c.manual)
+    throw HttpError("konflik client id scan dan client manual", 400);
   if (!j.barang || !j.alasan || !j.jangka_waktu)
-    return [body, "input jaminan masih ada yang kosong"];
+    throw HttpError("input jaminan masih ada yang kosong", 400);
   if (!f["jaminan[foto_jaminan]"] || !f["jaminan[foto_surat_pinjam]"])
-    return [body, "wajib memiliki foto jaminan dan surat pinjam"];
-  if (!dayjs(j.jangka_waktu).isValid()) 
-    return [body, "format jangka waktu salah"];
-  
-  if (c.id) return [body, ""]; // pass
-  
-  if (!c.alamat || !c.nama || !c.nik || !c.tipe)
-    return [body, "input client masih ada yang kosong"];
-  if (c.tipe !== "external" && c.tipe !== "internal")
-    return [body, "tipe client tidak benar: " + c.tipe];
-  if (c.tipe == "internal" && (!c.divisi || !c.id_card))
-    return [body, "Internal id card dan divisi (PT) masih kosong"];
+    throw HttpError("wajib memiliki foto jaminan dan surat pinjam", 400);
+  if (!dayjs(j.jangka_waktu).isValid())
+    throw HttpError("format jangka waktu salah", 400);
 
-  return [body, ""];
+  if (c.id) return req.body; // pass
+
+  if (!c.alamat || !c.nama || !c.nik || !c.tipe)
+    throw HttpError("input client masih ada yang kosong", 400);
+  if (c.tipe !== "external" && c.tipe !== "internal")
+    throw HttpError("tipe client tidak benar: " + c.tipe, 400);
+  if (c.tipe == "internal" && (!c.divisi || !c.id_card))
+    throw HttpError("Internal id card dan divisi (PT) masih kosong", 400);
+
+  return req.body;
 }
 
 interface EditJaminanRequest {
@@ -132,10 +131,10 @@ interface EditJaminanRequest {
 }
 
 // prettier-ignore
-export function validateEditJaminan(req: Request): [EditJaminanRequest, string] {
+export function validateEditJaminan(req: Request): EditJaminanRequest {
   if (!req.body.barang || !req.body.alasan || !req.body.jangka_waktu)
-    return [req.body, "input jaminan masih ada yang kosong"];
+    throw HttpError("input jaminan masih ada yang kosong", 400);
   if (!dayjs(req.body.jangka_waktu).isValid())
-    return [req.body, "format jangka waktu salah"];
-  return [req.body, ""];
+    throw HttpError("format jangka waktu salah", 400);
+  return req.body;
 }

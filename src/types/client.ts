@@ -6,6 +6,8 @@ import {
   PrimaryGeneratedColumn,
 } from "typeorm";
 import { Jaminan } from "./jaminan";
+import type { Request } from "express";
+import { HttpError } from "./error";
 
 export type ClientType = "internal" | "external";
 
@@ -39,12 +41,13 @@ export class ClientManual {
   jaminan?: Jaminan[];
 }
 
-export interface ScanKonsumenRequest {
+interface ScanKonsumenRequest {
   key: string;
 }
 
-export function validateScanKonsumen(req: ScanKonsumenRequest) {
-  if (!req || !req.key) return "keyword search masih kosong";
-  if (req.key.length > 100) return "keyword search terlalu panjang";
-  return "";
+export function validateScanKonsumen(req: Request): ScanKonsumenRequest {
+  const q = req.query as any;
+  if (!q || !q.key) throw HttpError("keyword search masih kosong", 400);
+  if (q.key.length > 100) throw HttpError("keyword search terlalu panjang", 400);
+  return q;
 }

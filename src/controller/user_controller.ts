@@ -1,9 +1,5 @@
 import type { Repository } from "typeorm";
-import {
-  validateScanKonsumen,
-  type ScanKonsumenRequest,
-  type User,
-} from "../types/user";
+import { type User } from "../types/user";
 import { HttpError } from "../types/error";
 import type { Request, Response } from "express";
 
@@ -19,6 +15,4 @@ const dummy = [
 
 export default class UserController {
   constructor(private repo: Repository<User>) {}
-
- 
 }

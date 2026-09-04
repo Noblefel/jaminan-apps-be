@@ -1,8 +1,7 @@
-import { Like, type Repository } from "typeorm";
-import type { ClientManual } from "../types/client";
 import type { Request, Response } from "express";
-import { HttpError } from "../types/error";
-import { validateScanKonsumen, type ScanKonsumenRequest } from "../types/user";
+import { Like, type Repository } from "typeorm";
+import { HttpError } from "../types/error"; 
+import { validateScanKonsumen, type ClientManual } from "../types/client";
 
 export default class ClientController {
   constructor(private repo: Repository<ClientManual>) {}
@@ -17,9 +16,7 @@ export default class ClientController {
   };
 
   search = async (req: Request, res: Response) => {
-    const input: ScanKonsumenRequest = req.query as any; // typescript membagongkan
-    const fail = validateScanKonsumen(input);
-    if (fail) throw HttpError(fail, 400);
+    const input = validateScanKonsumen(req);
 
     const condition = [
       { nama: Like(`%${input.key}%`) },

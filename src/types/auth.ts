@@ -1,3 +1,5 @@
+import type { Request } from "express";
+import { HttpError } from "./error";
 import type { ROLE } from "./user";
 
 export interface TokenData {
@@ -8,27 +10,30 @@ export interface TokenData {
   expire?: Date;
 }
 
-export interface LoginRequest {
+interface LoginRequest {
   email: string;
   password: string;
   remember?: boolean;
 }
 
-export interface RegisterRequest {
+interface RegisterRequest {
   name: string;
   email: string;
   password: string;
 }
 
-export function validateLogin(req: LoginRequest) {
+export function validateLogin(req: Request): LoginRequest {
   const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  if (!regex.test(req.email)) return "format email salah";
-  if (req.password.length < 8) return "password minimal 8 karakter";
-  return false;
+  if (!regex.test(req.body.email))
+    throw HttpError("format email tidak benar", 400);
+  if (req.body.password.length < 8)
+    throw HttpError("password minimal 8 karakter", 400);
+  return req.body;
 }
 
-export function validateRegister(req: RegisterRequest) {
-  if (!req.name.length) return "nama masih kosong";
-  if (req.name.length > 100) return "nama terlalu panjang";
-  return validateLogin({ email: req.email, password: req.password });
+export function validateRegister(req: Request): RegisterRequest {
+  if (!req.body.name.length) throw HttpError("nama masih kosong", 400);
+  if (req.body.name.length > 100) throw HttpError("nama terlalu panjang", 400);
+  validateLogin(req);
+  return req.body;
 }
