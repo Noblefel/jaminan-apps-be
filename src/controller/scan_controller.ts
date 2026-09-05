@@ -14,10 +14,18 @@ export default class ScanController {
     const uuid = req.params.uuid as string;
     const jaminan = await this.repo.findOne({
       where: { uuid, status: "pinjam" },
+      relations: { client: true },
     });
     const data = {} as any;
 
     if (jaminan) {
+      // Mas Erlang => M** E*****
+      data.name = jaminan.client.nama
+        .split(" ")
+        .map((n) => n[0] + "*".repeat(n.length - 1))
+        .join("  ")
+        .toUpperCase();
+
       data.message = "Barang jaminan anda bisa mulai diambil pada tanggal:";
       data.date = dayjs(jaminan.jangka_waktu).format("DD MMMM YYYY");
     } else {
