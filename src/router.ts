@@ -19,6 +19,7 @@ import type JaminanController from "./controller/jaminan_controller.ts";
 import type ClientController from "./controller/client_controller.ts";
 import type StorageController from "./controller/storage_controller.ts";
 import type ScanController from "./controller/scan_controller.ts";
+import type PengambilanController from "./controller/pengambilan_controller.ts";
 
 export const routes = (
   authCt: AuthController,
@@ -26,6 +27,7 @@ export const routes = (
   scanCt: ScanController,
   clientCt: ClientController,
   jaminanCt: JaminanController,
+  ambilCt: PengambilanController,
   storageCt: StorageController,
 ) => {
   const router = Router();
@@ -44,7 +46,10 @@ export const routes = (
     "/jaminan",
     auth,
     guard(ROLE.MARKETING, ROLE.HEAD_MANAGER),
-    upload.fields(jaminanField),
+    upload.fields([
+      { name: "jaminan[foto_jaminan]" },
+      { name: "jaminan[foto_surat_pinjam]" },
+    ]),
     jaminanCt.store,
   );
 
@@ -52,10 +57,32 @@ export const routes = (
     "/jaminan/:id",
     auth,
     guard(ROLE.MARKETING, ROLE.HEAD_MANAGER),
-    upload.fields(jaminanFieldEdit),
+    upload.fields([{ name: "foto_jaminan" }, { name: "foto_surat_pinjam" }]),
     jaminanCt.put,
   );
-  
+
+  router.get(
+    "/pengambilan",
+    auth,
+    guard(
+      ROLE.MARKETING,
+      ROLE.ADMIN_JAMINAN,
+      ROLE.ADMIN_EXTERNAL,
+      ROLE.ADMIN_INTERNAL,
+      ROLE.HEAD_MANAGER,
+    ),
+    upload.fields([{ name: "foto_bast" }]),
+    ambilCt.get,
+  );
+
+  router.post(
+    "/pengambilan",
+    auth,
+    guard(ROLE.MARKETING, ROLE.HEAD_MANAGER),
+    upload.fields([{ name: "foto_bast" }]),
+    ambilCt.store,
+  );
+
   router.get("/scan/:uuid", scanCt.scanPublic);
   router.get("/client/search", auth, clientCt.search);
   router.get("/storage/*path", storageCt.get);
@@ -95,15 +122,3 @@ function error(err: any, req: Request, res: Response, next: NextFunction) {
   const message = err.message || "terjadi kesalahan sistem";
   return res.status(err.statusCode ?? 500).json({ message });
 }
-
-// upload fields
-
-const jaminanFieldEdit = [
-  { name: "foto_jaminan" },
-  { name: "foto_surat_pinjam" },
-];
-
-const jaminanField = [
-  { name: "jaminan[foto_jaminan]" },
-  { name: "jaminan[foto_surat_pinjam]" },
-];

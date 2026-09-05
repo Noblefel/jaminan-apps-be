@@ -28,6 +28,7 @@ export default class JaminanController {
     const query = this.repo
       .createQueryBuilder("jaminan")
       .leftJoinAndSelect("jaminan.client", "client")
+      .leftJoinAndSelect("jaminan.marketing", "marketing")
       .orderBy("jaminan.created_at", "DESC")
       .offset(pagination.offset)
       .limit(pagination.limit);

@@ -7,7 +7,8 @@ import {
 
 export enum ROLE {
   HEAD_MANAGER = "hm",
-  ADMIN_LAPORAN = "adm_laporan",
+  ADMIN_INTERNAL = "adm_internal",
+  ADMIN_EXTERNAL = "adm_external",
   ADMIN_JAMINAN = "adm_jaminan",
   MARKETING = "marketing",
   GUEST = "guest",

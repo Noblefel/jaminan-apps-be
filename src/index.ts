@@ -16,6 +16,8 @@ import ClientController from "./controller/client_controller.ts";
 import StorageController from "./controller/storage_controller.ts";
 import JaminanController from "./controller/jaminan_controller.ts";
 import ScanController from "./controller/scan_controller.ts";
+import { Pengambilan } from "./types/pengambilan.ts";
+import PengambilanController from "./controller/pengambilan_controller.ts";
 
 async function start() {
   await Connection.initialize();
@@ -31,15 +33,17 @@ async function start() {
   const userRp = Connection.getRepository(User);
   const clientRp = Connection.getRepository(ClientManual);
   const jaminanRp = Connection.getRepository(Jaminan);
-
-  const userCt = new UserController(userRp);
-  const authCt = new AuthController(userRp);
-  const scanCt = new ScanController(jaminanRp, eta);
-  const clientCt = new ClientController(clientRp);
-  const jaminanCt = new JaminanController(jaminanRp, clientRp, storage);
-  const storageCt = new StorageController(storage);
-
-  const route = routes(authCt, userCt, scanCt, clientCt, jaminanCt, storageCt);
+  const ambilRp = Connection.getRepository(Pengambilan);
+ 
+  const route = routes(
+    new AuthController(userRp),
+    new UserController(userRp),
+    new ScanController(jaminanRp, eta),
+    new ClientController(clientRp),
+    new JaminanController(jaminanRp, clientRp, storage),
+    new PengambilanController(ambilRp, jaminanRp, storage),
+    new StorageController(storage),
+  );
 
   const app = e();
   app.use(cors({ origin: config.allowedOrigins }));

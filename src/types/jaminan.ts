@@ -56,10 +56,10 @@ export class Jaminan {
   @Column({ type: "date" })
   jangka_waktu: Date;
 
-  @Column({ type: "varchar", length: 50, nullable: true })
+  @Column({ type: "varchar", length: 150, nullable: true })
   foto_jaminan: string;
 
-  @Column({ type: "varchar", length: 50, nullable: true })
+  @Column({ type: "varchar", length: 150, nullable: true })
   foto_surat_pinjam: string;
 
   @Column({ type: "enum", enum: ["lunas", "pinjam"], default: "pinjam" })
@@ -81,8 +81,6 @@ interface StoreJaminanRequest {
     barang: string;
     alasan: string;
     jangka_waktu: string;
-    foto_jaminan: Object | null;
-    foto_surat_pinjam: Object | null;
   };
   client: {
     id: number;
@@ -107,8 +105,10 @@ export function validateStoreJaminan(req: Request): StoreJaminanRequest {
   // formdata convert everything to string. +typescript membagongkan
   c.manual = (c.manual as unknown as string) === "true";
 
-  if (c.id && c.manual)
+  if (c.id && c.nama)
     throw HttpError("konflik client id scan dan client manual", 400);
+  if (!c.id && !c.manual)
+    throw HttpError("pilih client id terlebih dahulu", 400);
   if (!j.barang || !j.alasan || !j.jangka_waktu)
     throw HttpError("input jaminan masih ada yang kosong", 400);
   if (!f["jaminan[foto_jaminan]"] || !f["jaminan[foto_surat_pinjam]"])
