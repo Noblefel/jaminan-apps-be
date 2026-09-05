@@ -83,6 +83,14 @@ export const routes = (
     ambilCt.store,
   );
 
+  router.put(
+    "/pengambilan/:id",
+    auth,
+    guard(ROLE.MARKETING, ROLE.HEAD_MANAGER),
+    upload.fields([{ name: "foto_bast" }]),
+    ambilCt.put,
+  );
+
   router.get("/scan/:uuid", scanCt.scanPublic);
   router.get("/client/search", auth, clientCt.search);
   router.get("/storage/*path", storageCt.get);

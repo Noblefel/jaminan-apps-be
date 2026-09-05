@@ -54,8 +54,8 @@ export class MinioStorage {
     return await this.client.getObject(config.minioBucket!, path);
   }
 
-  async delete(path: string) {
-    if (!this.client) return;
+  async delete(path: string | null) {
+    if (!this.client || !path) return;
     await this.client.removeObject(config.minioBucket!, path);
   }
 }

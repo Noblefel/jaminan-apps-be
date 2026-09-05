@@ -25,7 +25,7 @@ export class Pengambilan {
   jaminan: Jaminan;
 
   @Column({ type: "varchar", length: 150, nullable: true })
-  foto_bast: string;
+  foto_bast: string | null;
 
   @Column({ type: "enum", enum: ["approved", "rejected"], nullable: true })
   approval_adm_internal: Approval;
@@ -63,5 +63,14 @@ export function validateStorePengambilan(req: Request): StorePengambilanRequest 
   if (!req.body.jaminan_id)
     throw HttpError("pilih jaminan id terlebih dahulu", 400);
     
+  return req.body;
+}
+
+interface EditPengambilanRequest {
+  foto_bast: string | null;
+}
+
+export function validateEditPengambilan(req: Request): EditPengambilanRequest {
+  if (req.body.foto_bast === "null") req.body.foto_bast = null; // delete image
   return req.body;
 }
