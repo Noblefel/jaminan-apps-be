@@ -9,6 +9,7 @@ import {
 import { Jaminan } from "./jaminan";
 import type { Request } from "express";
 import { HttpError } from "./error";
+import type { TokenData } from "./auth";
 
 export type Approval = "approved" | "rejected" | null;
 
@@ -81,8 +82,9 @@ interface ApproveRequest {
 }
 
 // prettier-ignore
-export function validateApprove(req: Request): ApproveRequest {
-  if (!req.body.keterangan) throw HttpError("Keterangan masih kosong", 400);
+export function validateApprove(req: Request, auth: TokenData): ApproveRequest {
+  const ket = auth.role === "adm_external" || auth.role === "adm_internal"; 
+  if (!req.body.keterangan && ket) throw HttpError("Keterangan masih kosong", 400);
   if (!["approved", "rejected"].includes(req.body.approval)) throw HttpError("invalid approval", 400);
   return req.body;
 }

@@ -11,6 +11,7 @@ import {
   validateEditPengambilan,
   validateStorePengambilan,
 } from "../types/pengambilan";
+import type { Role } from "../types/user";
 
 export default class PengambilanController {
   constructor(
@@ -21,6 +22,7 @@ export default class PengambilanController {
 
   get = async (req: Request, res: Response) => {
     const pagination = new Pagination(req);
+    const role = req.query.role as Role;
 
     const query = this.repo
       .createQueryBuilder("ambil")
@@ -45,6 +47,26 @@ export default class PengambilanController {
     if (req.query.search) {
       const like = { s: "%" + (req.query.search as string).trim() + "%" };
       query.andWhere("(client.nama LIKE :s OR client.nik LIKE :s)", like);
+    }
+
+    // prettier-ignore
+    if (role === "hm") {
+      query.andWhere("ambil.final_approval IS NULL");
+      query.andWhere("ambil.approval_adm_jaminan = 'approved'");
+      query.andWhere("(ambil.approval_adm_internal = 'approved' OR ambil.approval_adm_external = 'approved')");
+    } else if (role === "adm_internal") {
+      query.andWhere("client.tipe = 'internal'");
+      query.andWhere("ambil.final_approval IS NULL");
+      query.andWhere("ambil.approval_adm_internal IS NULL");
+      query.andWhere("ambil.approval_adm_jaminan = 'approved'");
+    } else if (role === "adm_external") {
+      query.andWhere("client.tipe = 'external'");
+      query.andWhere("ambil.final_approval IS NULL");
+      query.andWhere("ambil.approval_adm_external IS NULL");
+      query.andWhere("ambil.approval_adm_jaminan = 'approved'");
+    } else if (role === "adm_jaminan") {
+      query.andWhere("ambil.final_approval IS NULL");
+      query.andWhere("ambil.approval_adm_jaminan IS NULL");
     }
 
     pagination.setPages(await query.getCount());
@@ -115,8 +137,8 @@ export default class PengambilanController {
   };
 
   approve = async (req: Request, res: Response) => {
-    const input = validateApprove(req);
     const auth: TokenData = res.locals.auth;
+    const input = validateApprove(req, auth);
     const id = req.params.id as any;
 
     const ambil = await this.repo.findOne({
@@ -136,15 +158,15 @@ export default class PengambilanController {
 
     if (auth.role === "adm_internal" && ambil.jaminan.client.tipe == "external")
       throw HttpError("Pengajuan ini khusus admin external", 403);
-
-    const index = "approval_" + auth.role;
-
+ 
     // @ts-ignore
-    if (ambil[index] != null)
+    if (ambil["approval_" + auth.role] != null)
       throw HttpError("Tidak bisa approve/reject dua kali", 409);
-
+ 
     // @ts-ignore
-    ambil[index] = input.approval;
+    ambil["approval_" + auth.role] = input.approval;
+    if (auth.role === "adm_internal") ambil["ket_adm_internal"] = input.keterangan;     
+    if (auth.role === "adm_external") ambil["ket_adm_external"] = input.keterangan;     
 
     if (input.approval === "rejected" || auth.role === "hm")
       ambil.final_approval = input.approval;
