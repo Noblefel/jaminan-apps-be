@@ -5,14 +5,13 @@ import {
   PrimaryGeneratedColumn,
 } from "typeorm";
 
-export enum ROLE {
-  HEAD_MANAGER = "hm",
-  ADMIN_INTERNAL = "adm_internal",
-  ADMIN_EXTERNAL = "adm_external",
-  ADMIN_JAMINAN = "adm_jaminan",
-  MARKETING = "marketing",
-  GUEST = "guest",
-}
+export type Role =
+  | "hm"
+  | "adm_internal"
+  | "adm_external"
+  | "adm_jaminan"
+  | "marketing"
+  | "guest";
 
 @Entity()
 export class User {
@@ -28,8 +27,19 @@ export class User {
   @Column({ type: "varchar", length: 254 })
   password: string;
 
-  @Column({ type: "enum", enum: ROLE, default: ROLE.GUEST })
-  role: ROLE;
+  @Column({
+    type: "enum",
+    enum: [
+      "hm",
+      "adm_internal",
+      "adm_external",
+      "adm_jaminan",
+      "marketing",
+      "guest",
+    ],
+    default: "guest",
+  })
+  role: Role;
 
   @CreateDateColumn()
   created_at: Date;

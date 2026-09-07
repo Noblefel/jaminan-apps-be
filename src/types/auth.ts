@@ -1,11 +1,11 @@
 import type { Request } from "express";
 import { HttpError } from "./error";
-import type { ROLE } from "./user";
+import type { Role } from "./user";
 
 export interface TokenData {
   id: number;
   name: string;
-  role: ROLE;
+  role: Role;
   token?: string;
   expire?: Date;
 }

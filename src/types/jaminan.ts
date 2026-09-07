@@ -24,7 +24,8 @@ export type Barang =
 
 export type Status =
   | "lunas" // diserahakn
-  | "pinjam"; // dalam brankas
+  | "pinjam" // dalam brankas
+  | "ambil" // menungggu pengambilan 
 
 @Entity()
 export class Jaminan {
@@ -62,8 +63,11 @@ export class Jaminan {
   @Column({ type: "varchar", length: 150, nullable: true })
   foto_surat_pinjam: string;
 
-  @Column({ type: "enum", enum: ["lunas", "pinjam"], default: "pinjam" })
+  @Column({ type: "enum", enum: ["lunas", "pinjam", "ambil"], default: "pinjam" })
   status: Status;
+
+  @Column({ type: "timestamp", nullable: true })
+  barang_keluar: Date;
 
   @Column({ type: "unsigned big int", name: "marketing_id" })
   marketing_id: number;

@@ -20,7 +20,7 @@ export class Pengambilan {
   @Column({ type: "unsigned big int", name: "jaminan_id" })
   jaminan_id: number;
 
-  @ManyToOne(() => Jaminan, { cascade: ["insert"] })
+  @ManyToOne(() => Jaminan, { cascade: ["insert", "update"] })
   @JoinColumn({ name: "jaminan_id" })
   jaminan: Jaminan;
 
@@ -46,7 +46,7 @@ export class Pengambilan {
   approval_hm: Approval;
 
   @Column({ type: "enum", enum: ["approved", "rejected"], nullable: true })
-  final_status: Approval; // for easier query check.
+  final_approval: Approval; // for easier query check.
 
   @CreateDateColumn()
   created_at: Date;
@@ -72,5 +72,17 @@ interface EditPengambilanRequest {
 
 export function validateEditPengambilan(req: Request): EditPengambilanRequest {
   if (req.body.foto_bast === "null") req.body.foto_bast = null; // delete image
+  return req.body;
+}
+
+interface ApproveRequest {
+  keterangan: string;
+  approval: Approval;
+}
+
+// prettier-ignore
+export function validateApprove(req: Request): ApproveRequest {
+  if (!req.body.keterangan) throw HttpError("Keterangan masih kosong", 400);
+  if (!["approved", "rejected"].includes(req.body.approval)) throw HttpError("invalid approval", 400);
   return req.body;
 }

@@ -1,14 +1,16 @@
 import type { Request, Response } from "express";
 import { IsNull, type Repository } from "typeorm";
+import { HttpError } from "../types/error";
+import { Pagination } from "../utils/pagination";
 import type { MinioStorage } from "../utils/storage";
+import type { Jaminan } from "../types/jaminan";
+import type { TokenData } from "../types/auth";
 import {
   Pengambilan,
+  validateApprove,
   validateEditPengambilan,
   validateStorePengambilan,
 } from "../types/pengambilan";
-import type { Jaminan } from "../types/jaminan";
-import { HttpError } from "../types/error";
-import { Pagination } from "../utils/pagination";
 
 export default class PengambilanController {
   constructor(
@@ -36,6 +38,10 @@ export default class PengambilanController {
       query.andWhere("client.tipe = :t", { t: req.query.tipe });
     }
 
+    if (req.query.final) {
+      query.andWhere("ambil.final_approval = :f", { f: req.query.final });
+    }
+
     if (req.query.search) {
       const like = { s: "%" + (req.query.search as string).trim() + "%" };
       query.andWhere("(client.nama LIKE :s OR client.nik LIKE :s)", like);
@@ -60,8 +66,11 @@ export default class PengambilanController {
     if (jaminan.status === "lunas")
       throw HttpError("Jaminan ini sudah lunas/diserahkan", 409);
 
+    if (jaminan.status === "ambil")
+      throw HttpError("Pengajuan sudah di acc, menunggu pengambilan", 409);
+
     const pending = await this.repo.exists({
-      where: { jaminan_id: input.jaminan_id, final_status: IsNull() },
+      where: { jaminan_id: input.jaminan_id, final_approval: IsNull() },
     });
 
     if (pending)
@@ -90,7 +99,7 @@ export default class PengambilanController {
       where: { id },
     });
 
-    if (!ambil) throw HttpError("Data jaminan tidak ditemukan", 404);
+    if (!ambil) throw HttpError("Data pengajuan tidak ditemukan", 404);
 
     if (files["foto_bast"]) {
       await this.storage.delete(ambil.foto_bast);
@@ -103,5 +112,46 @@ export default class PengambilanController {
 
     const data = await this.repo.save(ambil);
     return res.json({ message: "Data pengajuan berhasil disimpan", data });
+  };
+
+  approve = async (req: Request, res: Response) => {
+    const input = validateApprove(req);
+    const auth: TokenData = res.locals.auth;
+    const id = req.params.id as any;
+
+    const ambil = await this.repo.findOne({
+      relations: { jaminan: { client: true } },
+      where: { id },
+    });
+
+    if (!ambil) throw HttpError("Data pengajuan tidak ditemukan", 404);
+
+    if (ambil.final_approval != null) {
+      const s = ambil.final_approval === "approved" ? "diapprove" : "ditolak";
+      throw HttpError(`Pengajuan sudah ${s} final`, 409);
+    }
+
+    if (auth.role === "adm_external" && ambil.jaminan.client.tipe == "internal")
+      throw HttpError("Pengajuan ini khusus admin internal", 403);
+
+    if (auth.role === "adm_internal" && ambil.jaminan.client.tipe == "external")
+      throw HttpError("Pengajuan ini khusus admin external", 403);
+
+    const index = "approval_" + auth.role;
+
+    // @ts-ignore
+    if (ambil[index] != null)
+      throw HttpError("Tidak bisa approve/reject dua kali", 409);
+
+    // @ts-ignore
+    ambil[index] = input.approval;
+
+    if (input.approval === "rejected" || auth.role === "hm")
+      ambil.final_approval = input.approval;
+
+    if (ambil.final_approval === "approved") ambil.jaminan.status = "ambil";
+
+    const data = await this.repo.save(ambil);
+    return res.json({ message: "Data approval berhasil disimpan", data });
   };
 }

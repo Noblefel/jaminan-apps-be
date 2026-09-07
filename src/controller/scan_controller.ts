@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import type { Repository } from "typeorm";
+import { In, type Repository } from "typeorm";
 import type { Jaminan } from "../types/jaminan";
 import type { Eta } from "eta";
 import dayjs from "dayjs";
@@ -13,7 +13,7 @@ export default class ScanController {
   scanPublic = async (req: Request, res: Response) => {
     const uuid = req.params.uuid as string;
     const jaminan = await this.repo.findOne({
-      where: { uuid, status: "pinjam" },
+      where: { uuid, status: In(["pinjam", "ambil"]) },
       relations: { client: true },
     });
     const data = {} as any;

@@ -85,8 +85,8 @@ export default class JaminanController {
       if (b) throw HttpError("NIK sudah terdaftar, silahkan pakai fitur search konsumen", 409)
 
       client.divisi = c.divisi;
-      client.nama = c.alamat;
-      client.nik = c.alamat;
+      client.nama = c.nama;
+      client.nik = c.nik;
       client.tipe = c.tipe as ClientType;
       client.alamat = c.alamat;
       client.id_card = c.id_card;
@@ -113,7 +113,7 @@ export default class JaminanController {
     const id = Number(req.params.id);
     const condition = { where: { id }, relations: { client: true } };
     const jaminan = await this.repo.findOne(condition);
-    if (!jaminan) throw HttpError("not found", 404);
+    if (!jaminan) throw HttpError("data tidak ditemukan", 404);
 
     jaminan.alasan = input.alasan;
     jaminan.barang = input.barang as Barang;
@@ -138,5 +138,19 @@ export default class JaminanController {
 
     const data = await this.repo.save(jaminan);
     return res.json({ message: "Data jaminan berhasil disimpan", data });
+  };
+
+  out = async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    const jaminan = await this.repo.findOne({ where: { id } });
+    if (!jaminan) throw HttpError("data tidak ditemukan", 404);
+
+    if (jaminan.status != "ambil")
+      throw HttpError("barang belum ada acc pengambilan", 403);
+
+    jaminan.status = "lunas";
+    jaminan.barang_keluar = new Date();
+    await this.repo.save(jaminan);
+    return res.json({ message: "Barang berhasil diserahkan" });
   };
 }
