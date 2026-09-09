@@ -4,6 +4,7 @@ import { config } from "../config";
 import { slug } from "./formatter";
 import path from "node:path";
 import dayjs from "dayjs";
+import { HttpError } from "../types/error";
 
 export class MinioStorage {
   private client;
@@ -32,19 +33,13 @@ export class MinioStorage {
     console.log("Bucket created");
   }
 
-  async put(req: Request, field: string, ...names: string[]) {
-    if (!this.client) return;
-
-    // @ts-ignore
-    const files = req.files[field]; // typescript membagongkan
-    if (!files?.length) return;
+  async put(file: any, ...names: string[]) {
+    if (!this.client || !file) return;
 
     let name = path.join(...names.map((p) => slug(p)));
     name += "_" + dayjs().unix();
-    name += path.extname(files[0].originalname);
-
-    const buf = files[0].buffer;
-    await this.client.putObject(config.minioBucket!, name, buf);
+    name += path.extname(file.originalname);
+    await this.client.putObject(config.minioBucket!, name, file.buffer);
 
     return name;
   }
@@ -54,8 +49,8 @@ export class MinioStorage {
     return await this.client.getObject(config.minioBucket!, path);
   }
 
-  async delete(path: string | null) {
-    if (!this.client || !path) return;
-    await this.client.removeObject(config.minioBucket!, path);
+  async delete(...path: string[]) {
+    if (!this.client || !path.length) return;
+    await this.client.removeObject(config.minioBucket!, path.join("/"));
   }
 }

@@ -2,30 +2,21 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { ClientManual, type ClientType } from "./client";
-import { User } from "./user";
-import dayjs from "dayjs";
-import type { Request } from "express";
 import { HttpError } from "./error";
+import { JaminanBarang, type Barang } from "./jaminan_barang";
+import type { Request } from "express";
+import dayjs from "dayjs";
 
-export type Barang =
-  | "ijazah-sma"
-  | "ijazah-smp"
-  | "ktp"
-  | "shm"
-  | "bpkp"
-  | "akte"
-  | "kk";
+export type ClientType = "internal" | "external";
 
 export type Status =
-  | "lunas" // diserahakn
-  | "pinjam" // dalam brankas
-  | "ambil" // menungggu pengambilan 
+  | "brankas"
+  | "pinjam"
+  | "ambil" // menungggu pengambilan
+  | "lunas"; // diserahakn
 
 @Entity()
 export class Jaminan {
@@ -35,100 +26,72 @@ export class Jaminan {
   @Column({ type: "varchar", length: 120, unique: true })
   uuid: string; // for qr
 
-  @Column({ type: "unsigned big int", name: "client_id" })
-  client_id: number;
-
-  @ManyToOne(() => ClientManual, { cascade: ["insert"] })
-  @JoinColumn({ name: "client_id" })
-  client: ClientManual;
-
-  @Column({ type: "boolean", default: false })
-  client_manual: boolean;
-
   @Column({
     type: "enum",
-    enum: ["ijazah-sma", "ijazah-smp", "ktp", "shm", "bpkp", "akte", "kk"],
+    enum: ["lunas", "pinjam", "ambil", "brankas"],
+    default: "brankas",
   })
-  barang: Barang;
-
-  @Column({ type: "text", nullable: true })
-  alasan: string;
-
-  @Column({ type: "date" })
-  jangka_waktu: Date;
-
-  @Column({ type: "varchar", length: 150, nullable: true })
-  foto_jaminan: string;
-
-  @Column({ type: "varchar", length: 150, nullable: true })
-  foto_surat_pinjam: string;
-
-  @Column({ type: "enum", enum: ["lunas", "pinjam", "ambil"], default: "pinjam" })
   status: Status;
 
   @Column({ type: "timestamp", nullable: true })
   barang_keluar: Date;
 
-  @Column({ type: "unsigned big int", name: "marketing_id" })
-  marketing_id: number;
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: "marketing_id" })
-  marketing: User;
-
   @CreateDateColumn()
   created_at: Date;
+
+  @Column({ type: "varchar", length: 150 })
+  nama: string;
+
+  @Column({ type: "varchar", length: 250 })
+  alamat: string;
+
+  @Column({ type: "varchar", length: 30 })
+  nik: string;
+
+  @Column({ type: "enum", enum: ["internal", "external"] })
+  tipe: ClientType;
+
+  @Column({ type: "varchar", length: 50, nullable: true })
+  divisi: string;
+
+  @Column({ type: "varchar", length: 50, nullable: true })
+  id_card: string;
+
+  @OneToMany(() => JaminanBarang, (barang) => barang.jaminan, {
+    cascade: ["insert"],
+  })
+  barang?: JaminanBarang[];
 }
 
 interface StoreJaminanRequest {
-  jaminan: {
-    barang: string;
-    alasan: string;
-    jangka_waktu: string;
-  };
-  client: {
-    id: number;
-    nama: string;
-    alamat: string;
-    nik: string;
-    tipe: string;
-    divisi: string;
-    id_card: string;
-    manual: boolean;
-  };
+  nama: string;
+  alamat: string;
+  nik: string;
+  tipe: ClientType;
+  divisi: string;
+  id_card: string;
+  barang: Barang[];
 }
 
 export function validateStoreJaminan(req: Request): StoreJaminanRequest {
-  const j = req.body.jaminan;
-  const c = req.body.client;
-  const f = req.files as any;
+  const b = req.body as StoreJaminanRequest;
 
-  if (!j || !c) throw HttpError("tidak ada data jaminan & client", 400);
-  // formdata convert everything to string
-  c.id = Number(c?.id || 0);
-  // formdata convert everything to string. +typescript membagongkan
-  c.manual = (c.manual as unknown as string) === "true";
+  if (!b.nik || !b.nama || !b.alamat)
+    throw HttpError("data konsumen masih ada yang kosong", 400);
 
-  if (c.id && c.nama)
-    throw HttpError("konflik client id scan dan client manual", 400);
-  if (!c.id && !c.manual)
-    throw HttpError("pilih client id terlebih dahulu", 400);
-  if (!j.barang || !j.alasan || !j.jangka_waktu)
-    throw HttpError("input jaminan masih ada yang kosong", 400);
-  if (!f["jaminan[foto_jaminan]"] || !f["jaminan[foto_surat_pinjam]"])
-    throw HttpError("wajib memiliki foto jaminan dan surat pinjam", 400);
-  if (!dayjs(j.jangka_waktu).isValid())
-    throw HttpError("format jangka waktu salah", 400);
+  if (b.tipe === "internal" && (!b.divisi || !b.id_card))
+    throw HttpError("konsumen internal wajib input divisi dan id card", 400);
 
-  if (c.id) return req.body; // pass
+  if (!b.barang.length || b.barang.some((bb) => !bb.length))
+    throw HttpError("Barang jaminan masih kosong", 400);
 
-  if (!c.alamat || !c.nama || !c.nik || !c.tipe)
-    throw HttpError("input client masih ada yang kosong", 400);
-  if (c.tipe !== "external" && c.tipe !== "internal")
-    throw HttpError("tipe client tidak benar: " + c.tipe, 400);
-  if (c.tipe == "internal" && (!c.divisi || !c.id_card))
-    throw HttpError("Internal id card dan divisi (PT) masih kosong", 400);
+  // @ts-ignore
+  if (!req.files.length)
+    throw HttpError("wajib memfoto barang jaminan baru", 400);
 
+  if (b.nik.length > 30) throw HttpError("NIK terlalu panjang", 400);
+  if (b.nama.length > 150) throw HttpError("Nama terlalu panjang", 400);
+  if (b.nama.length > 250) throw HttpError("Alamat terlalu panjang", 400);
   return req.body;
 }
 

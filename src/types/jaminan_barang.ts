@@ -1,0 +1,40 @@
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
+import { Jaminan } from "./jaminan";
+
+// TODO: update barang
+export type Barang =
+  | "ijazah-sma"
+  | "ijazah-smp"
+  | "ktp"
+  | "shm"
+  | "bpkp"
+  | "akte"
+  | "kk";
+
+@Entity()
+export class JaminanBarang {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: "unsigned big int", name: "jaminan_id" })
+  jaminan_id: number;
+
+  @ManyToOne(() => Jaminan, { onDelete: "CASCADE", cascade: ["remove"] })
+  @JoinColumn({ name: "jaminan_id" })
+  jaminan: Jaminan;
+
+  @Column({
+    type: "enum",
+    enum: ["ijazah-sma", "ijazah-smp", "ktp", "shm", "bpkp", "akte", "kk"],
+  })
+  barang: Barang;
+
+  @Column({ type: "varchar", length: 250, nullable: true })
+  foto: string;
+}

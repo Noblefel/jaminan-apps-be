@@ -14,7 +14,6 @@ import { HttpError } from "./types/error.ts";
 import type { TokenData } from "./types/auth.ts";
 import type AuthController from "./controller/auth_controller.ts";
 import type JaminanController from "./controller/jaminan_controller.ts";
-import type ClientController from "./controller/client_controller.ts";
 import type StorageController from "./controller/storage_controller.ts";
 import type ScanController from "./controller/scan_controller.ts";
 import type PengambilanController from "./controller/pengambilan_controller.ts";
@@ -23,7 +22,6 @@ import type { Role } from "./types/user.ts";
 export const routes = (
   authCt: AuthController,
   scanCt: ScanController,
-  clientCt: ClientController,
   jaminanCt: JaminanController,
   ambilCt: PengambilanController,
   storageCt: StorageController,
@@ -44,10 +42,7 @@ export const routes = (
     "/jaminan",
     auth,
     guard("marketing", "hm"),
-    upload.fields([
-      { name: "jaminan[foto_jaminan]" },
-      { name: "jaminan[foto_surat_pinjam]" },
-    ]),
+    upload.array("foto[]", 5),
     jaminanCt.store,
   );
 
@@ -97,7 +92,6 @@ export const routes = (
   );
 
   router.get("/scan/:uuid", scanCt.scanPublic);
-  router.get("/client/search", auth, clientCt.search);
   router.get("/storage/*path", storageCt.get);
   router.use(error);
   return router;

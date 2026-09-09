@@ -4,21 +4,19 @@ import { randomUUID } from "node:crypto";
 import dayjs from "dayjs";
 
 import { HttpError } from "../types/error";
-import { ClientManual, type ClientType } from "../types/client";
 import { Pagination } from "../utils/pagination";
 import type { MinioStorage } from "../utils/storage";
-import type { TokenData } from "../types/auth";
 import {
   Jaminan,
   validateEditJaminan,
   validateStoreJaminan,
-  type Barang,
+  type ClientType,
 } from "../types/jaminan";
+import { JaminanBarang } from "../types/jaminan_barang";
 
 export default class JaminanController {
   constructor(
     private repo: Repository<Jaminan>,
-    private repoClient: Repository<ClientManual>,
     private storage: MinioStorage,
   ) {}
 
@@ -27,14 +25,13 @@ export default class JaminanController {
 
     const query = this.repo
       .createQueryBuilder("jaminan")
-      .leftJoinAndSelect("jaminan.client", "client")
-      .leftJoinAndSelect("jaminan.marketing", "marketing")
+      .leftJoinAndSelect("jaminan.barang", "barang")
       .orderBy("jaminan.created_at", "DESC")
       .offset(pagination.offset)
       .limit(pagination.limit);
 
     if (req.query.barang) {
-      query.andWhere("jaminan.barang = :b", { b: req.query.barang });
+      query.andWhere("barang.barang = :b", { b: req.query.barang });
     }
 
     if (req.query.status) {
@@ -43,14 +40,15 @@ export default class JaminanController {
 
     if (req.query.search) {
       const like = { s: "%" + (req.query.search as string).trim() + "%" };
-      query.andWhere("(client.nama LIKE :s OR client.nik LIKE :s)", like);
+      query.andWhere("(jaminan.nama LIKE :s OR jaminan.nik LIKE :s)", like);
     }
 
     pagination.setPages(await query.getCount());
     const list = await query.getMany();
 
     const rawstat = await this.repo
-      .createQueryBuilder("c")
+      .createQueryBuilder("j")
+      .leftJoinAndSelect("j.barang", "barang")
       .select("barang, COUNT(*) AS total")
       .groupBy("barang")
       .getRawMany();
@@ -64,47 +62,30 @@ export default class JaminanController {
     return res.json({ data: { list, stat, pagination } });
   };
 
-  // prettier-ignore
   store = async (req: Request, res: Response) => {
     const input = validateStoreJaminan(req);
-    const auth: TokenData = res.locals.auth;
 
     const jaminan = new Jaminan();
-    jaminan.alasan = input.jaminan.alasan;
-    jaminan.barang = input.jaminan.barang as Barang;
-    jaminan.jangka_waktu = dayjs(input.jaminan.jangka_waktu).toDate();
     jaminan.uuid = randomUUID();
-    jaminan.marketing_id = auth.id;
+    jaminan.divisi = input.divisi;
+    jaminan.nama = input.nama;
+    jaminan.nik = input.nik;
+    jaminan.tipe = input.tipe as ClientType;
+    jaminan.alamat = input.alamat;
+    jaminan.id_card = input.id_card;
+    jaminan.barang = [];
 
-    if (input.client.manual) {
-      const client = new ClientManual();
-      const c = input.client!;
-
-      // scan konsumen itu ambil dari DB CG & client manual. CG lebih prioritas
-      const b = await this.repoClient.exists({ where: { nik: c.nik } })
-      if (b) throw HttpError("NIK sudah terdaftar, silahkan pakai fitur search konsumen", 409)
-
-      client.divisi = c.divisi;
-      client.nama = c.nama;
-      client.nik = c.nik;
-      client.tipe = c.tipe as ClientType;
-      client.alamat = c.alamat;
-      client.id_card = c.id_card;
-      jaminan.client = client;
-      jaminan.client_manual = true;
-    } else {
-      jaminan.client_id = input.client.id
+    // typescript membagongkan
+    // @ts-ignore
+    for (const [i, f] of req.files.entries()) {
+      const jb = new JaminanBarang();
+      jb.barang = input.barang[i]!;
+      jb.foto = (await this.storage.put(f, input.nama, "barang", jb.barang))!;
+      jaminan.barang.push(jb);
     }
 
-    const name = input.client?.nama!;
-    const j = await this.storage.put(req, "jaminan[foto_jaminan]", name, "foto_jaminan");
-    const s = await this.storage.put(req, "jaminan[foto_surat_pinjam]", name, "foto_surat_pinjam");
-
-    jaminan.foto_jaminan = j!;
-    jaminan.foto_surat_pinjam = s!;
-    const saved = await this.repo.save(jaminan);
-
-    return res.json({ message: "Data jaminan berhasil disimpan", data: saved.uuid });
+    const data = await this.repo.save(jaminan);
+    return res.json({ message: "Jaminan baru berhasil disimpan", data });
   };
 
   put = async (req: Request, res: Response) => {
