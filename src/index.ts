@@ -45,7 +45,6 @@ async function start() {
   const app = e();
   app.use(cors({ origin: config.allowedOrigins }));
   app.use(e.static("public"));
-  // app.use(e.urlencoded({ extended: true }));
   app.use(e.json());
   app.use(route);
 

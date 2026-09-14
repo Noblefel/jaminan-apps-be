@@ -7,16 +7,6 @@ import {
 } from "typeorm";
 import { Jaminan } from "./jaminan";
 
-// TODO: update barang
-export type Barang =
-  | "ijazah-sma"
-  | "ijazah-smp"
-  | "ktp"
-  | "shm"
-  | "bpkp"
-  | "akte"
-  | "kk";
-
 @Entity()
 export class JaminanBarang {
   @PrimaryGeneratedColumn()
@@ -37,4 +27,23 @@ export class JaminanBarang {
 
   @Column({ type: "varchar", length: 250, nullable: true })
   foto: string;
+
+  @Column({
+    type: "enum",
+    enum: ["brankas", "pinjam", "selesai"],
+    default: "brankas",
+  })
+  status: Status;
 }
+
+// TODO: update barang
+export type Barang =
+  | "ijazah-sma"
+  | "ijazah-smp"
+  | "ktp"
+  | "shm"
+  | "bpkp"
+  | "akte"
+  | "kk";
+
+export type Status = "brankas" | "pinjam" | "selesai";

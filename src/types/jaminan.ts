@@ -12,12 +12,6 @@ import dayjs from "dayjs";
 
 export type ClientType = "internal" | "external";
 
-export type Status =
-  | "brankas"
-  | "pinjam"
-  | "ambil" // menungggu pengambilan
-  | "lunas"; // diserahakn
-
 @Entity()
 export class Jaminan {
   @PrimaryGeneratedColumn()
@@ -25,13 +19,6 @@ export class Jaminan {
 
   @Column({ type: "varchar", length: 120, unique: true })
   uuid: string; // for qr
-
-  @Column({
-    type: "enum",
-    enum: ["lunas", "pinjam", "ambil", "brankas"],
-    default: "brankas",
-  })
-  status: Status;
 
   @Column({ type: "timestamp", nullable: true })
   barang_keluar: Date;

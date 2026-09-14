@@ -46,14 +46,6 @@ export const routes = (
     jaminanCt.store,
   );
 
-  router.put(
-    "/jaminan/:id",
-    auth,
-    guard("marketing", "hm"),
-    upload.fields([{ name: "foto_jaminan" }, { name: "foto_surat_pinjam" }]),
-    jaminanCt.put,
-  );
-
   router.post(
     "/jaminan/:id/out",
     auth,

@@ -8,7 +8,6 @@ import { Pagination } from "../utils/pagination";
 import type { MinioStorage } from "../utils/storage";
 import {
   Jaminan,
-  validateEditJaminan,
   validateStoreJaminan,
   type ClientType,
 } from "../types/jaminan";
@@ -35,7 +34,7 @@ export default class JaminanController {
     }
 
     if (req.query.status) {
-      query.andWhere("jaminan.status = :s", { s: req.query.status });
+      query.andWhere("barang.status = :s", { s: req.query.status });
     }
 
     if (req.query.search) {
@@ -88,38 +87,38 @@ export default class JaminanController {
     return res.json({ message: "Jaminan baru berhasil disimpan", data });
   };
 
-  put = async (req: Request, res: Response) => {
-    const input = validateEditJaminan(req);
+  // put = async (req: Request, res: Response) => {
+  //   const input = validateEditJaminan(req);
 
-    const id = Number(req.params.id);
-    const condition = { where: { id }, relations: { client: true } };
-    const jaminan = await this.repo.findOne(condition);
-    if (!jaminan) throw HttpError("data tidak ditemukan", 404);
+  //   const id = Number(req.params.id);
+  //   const condition = { where: { id }, relations: { client: true } };
+  //   const jaminan = await this.repo.findOne(condition);
+  //   if (!jaminan) throw HttpError("data tidak ditemukan", 404);
 
-    jaminan.alasan = input.alasan;
-    jaminan.barang = input.barang as Barang;
-    jaminan.jangka_waktu = dayjs(input.jangka_waktu).toDate();
+  //   jaminan.alasan = input.alasan;
+  //   jaminan.barang = input.barang as Barang;
+  //   jaminan.jangka_waktu = dayjs(input.jangka_waktu).toDate();
 
-    const name = jaminan.client.nama ?? "deleted_user";
-    const files = req.files as any; // !!!!typescript membagongkan
+  //   const name = jaminan.client.nama ?? "deleted_user";
+  //   const files = req.files as any; // !!!!typescript membagongkan
 
-    // prettier-ignore
-    if (files["foto_jaminan"]) {
-      await this.storage.delete(jaminan.foto_jaminan);
-      const j = await this.storage.put(req, "foto_jaminan", name, "foto_jaminan");
-      jaminan.foto_jaminan = j!
-    }
+  //   // prettier-ignore
+  //   if (files["foto_jaminan"]) {
+  //     await this.storage.delete(jaminan.foto_jaminan);
+  //     const j = await this.storage.put(req, "foto_jaminan", name, "foto_jaminan");
+  //     jaminan.foto_jaminan = j!
+  //   }
 
-    // prettier-ignore
-    if (files["foto_surat_pinjam"]) {
-      await this.storage.delete(jaminan.foto_surat_pinjam);
-      const s = await this.storage.put(req, "foto_surat_pinjam", name, "foto_surat_pinjam");
-      jaminan.foto_surat_pinjam = s!;
-    }
+  //   // prettier-ignore
+  //   if (files["foto_surat_pinjam"]) {
+  //     await this.storage.delete(jaminan.foto_surat_pinjam);
+  //     const s = await this.storage.put(req, "foto_surat_pinjam", name, "foto_surat_pinjam");
+  //     jaminan.foto_surat_pinjam = s!;
+  //   }
 
-    const data = await this.repo.save(jaminan);
-    return res.json({ message: "Data jaminan berhasil disimpan", data });
-  };
+  //   const data = await this.repo.save(jaminan);
+  //   return res.json({ message: "Data jaminan berhasil disimpan", data });
+  // };
 
   out = async (req: Request, res: Response) => {
     const id = Number(req.params.id);
