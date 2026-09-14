@@ -1,5 +1,113 @@
-
+import { type Repository } from "typeorm";
+import { Peminjaman, validateStorePeminjaman } from "../types/peminjaman";
+import type { MinioStorage } from "../utils/storage";
+import type { Request, Response } from "express";
+import type { Jaminan } from "../types/jaminan";
+import type { TokenData } from "../types/auth";
+import { HttpError } from "../types/error";
+import { Pagination } from "../utils/pagination";
+import type { Role } from "../types/user";
 
 export default class PeminjamanController {
-    constructor(private repo ) {}
+  constructor(
+    private repo: Repository<Peminjaman>,
+    private repoJaminan: Repository<Jaminan>,
+    private storage: MinioStorage,
+  ) {}
+
+  get = async (req: Request, res: Response) => {
+    const pagination = new Pagination(req);
+    const role = req.query.role as Role;
+
+    const query = this.repo
+      .createQueryBuilder("pinjam")
+      .leftJoinAndSelect("pinjam.barang", "barang")
+      .leftJoinAndSelect("barang.jaminan", "jaminan")
+      .orderBy("pinjam.created_at", "DESC")
+      .offset(pagination.offset)
+      .limit(pagination.limit);
+
+    if (req.query.barang) {
+      query.andWhere("barang.barang = :b", { b: req.query.barang });
+    }
+
+    if (req.query.tipe) {
+      query.andWhere("jaminan.tipe = :t", { t: req.query.tipe });
+    }
+
+    if (req.query.final) {
+      query.andWhere("pinjam.final_approval = :f", { f: req.query.final });
+    }
+
+    if (req.query.search) {
+      const like = { s: "%" + (req.query.search as string).trim() + "%" };
+      query.andWhere("(jaminan.nama LIKE :s OR jaminan.nik LIKE :s)", like);
+    }
+
+    if (role === "hm") {
+      query.andWhere("pinjam.final_approval IS NULL");
+      query.andWhere("pinjam.approval_adm_jaminan = 'approved'");
+    } else if (role === "adm_jaminan") {
+      query.andWhere("pinjam.final_approval IS NULL");
+      query.andWhere("pinjam.approval_adm_jaminan IS NULL");
+    }
+
+    pagination.setPages(await query.getCount());
+    const list = await query.getMany();
+
+    return res.json({ data: { list, pagination } });
+  };
+
+  store = async (req: Request, res: Response) => {
+    const input = validateStorePeminjaman(req);
+
+    const jaminan = await this.repoJaminan.findOne({
+      relations: { barang: { peminjaman: true } },
+      where: { id: req.params.id as any },
+    });
+    if (!jaminan) throw HttpError("Data jaminan tidak ditemukan", 404);
+
+    const barang = jaminan.barang?.find((b) => b.id == input.barang_id);
+    if (!barang) throw HttpError("Barang tidak ditemukan", 404);
+
+    if (barang.status !== "brankas")
+      throw HttpError("Barang sedang dipinjam atau sudah lunas", 409);
+
+    const pending = barang.peminjaman?.some((p) => p.final_approval == null);
+    if (pending) throw HttpError("Barang ini masih ada pengajuan pending", 409);
+
+    const pinjam = new Peminjaman();
+    pinjam.alasan = input.alasan;
+    pinjam.barang_id = input.barang_id;
+    pinjam.jangka_waktu = new Date(input.jangka_waktu);
+
+    if (req.file) {
+      pinjam.surat_pinjam = (await this.storage.put(
+        req.file,
+        jaminan.nama,
+        "surat_pinjam",
+        barang.barang,
+      ))!;
+    }
+
+    const auth: TokenData = res.locals.auth;
+    const resp: any = {};
+
+    if (auth.role === "hm") {
+      pinjam.approval_hm = "approved";
+      pinjam.final_approval = "approved";
+      resp.message = "Peminjaman berhasil. (HM) Otomatis approve";
+
+      barang.status = "pinjam";
+      pinjam.barang = barang; // cascade update
+    } else if (auth.role === "adm_jaminan") {
+      pinjam.approval_adm_jaminan = "approved";
+      resp.message = "Peminjaman diajukan. Tunggu approval HM";
+    } else {
+      resp.message = "Peminjaman diajukan. Tunggu approval admin jaminan & HM";
+    }
+
+    resp.data = await this.repo.save(pinjam);
+    return res.json(resp);
+  };
 }

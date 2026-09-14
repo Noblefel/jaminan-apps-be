@@ -4,6 +4,7 @@ import { User } from "./types/user.ts";
 import { Jaminan } from "./types/jaminan.ts";
 import { Pengambilan } from "./types/pengambilan.ts";
 import { JaminanBarang } from "./types/jaminan_barang.ts";
+import { Peminjaman } from "./types/peminjaman.ts";
 
 export const Connection = new DataSource({
   type: config.database as any, // typescript membagongkan
@@ -14,7 +15,7 @@ export const Connection = new DataSource({
   database: config.databaseName,
   synchronize: true,
   logging: true,
-  entities: [User, Jaminan, JaminanBarang, Pengambilan],
+  entities: [User, Jaminan, JaminanBarang, Peminjaman, Pengambilan],
   timezone: "Z",
   invalidWhereValuesBehavior: { null: "sql-null" },
 });

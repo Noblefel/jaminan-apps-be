@@ -3,9 +3,11 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
 import { Jaminan } from "./jaminan";
+import { Peminjaman } from "./peminjaman";
 
 @Entity()
 export class JaminanBarang {
@@ -34,6 +36,11 @@ export class JaminanBarang {
     default: "brankas",
   })
   status: Status;
+
+  @OneToMany(() => Peminjaman, (peminjaman) => peminjaman.barang, {
+    cascade: ["insert"],
+  })
+  peminjaman?: Peminjaman[];
 }
 
 // TODO: update barang

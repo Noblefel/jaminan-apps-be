@@ -10,13 +10,15 @@ import { Connection } from "./connection.ts";
 import { routes } from "./router.ts";
 import { User } from "./types/user.ts";
 import { Jaminan } from "./types/jaminan.ts";
-import { MinioStorage } from "./utils/storage.ts"; 
+import { MinioStorage } from "./utils/storage.ts";
 import { Pengambilan } from "./types/pengambilan.ts";
-import AuthController from "./controller/auth_controller.ts"; 
+import { Peminjaman } from "./types/peminjaman.ts";
+import AuthController from "./controller/auth_controller.ts";
 import StorageController from "./controller/storage_controller.ts";
 import JaminanController from "./controller/jaminan_controller.ts";
 import ScanController from "./controller/scan_controller.ts";
 import PengambilanController from "./controller/pengambilan_controller.ts";
+import PeminjamanController from "./controller/peminjaman_controller.ts";
 
 async function start() {
   await Connection.initialize();
@@ -30,14 +32,16 @@ async function start() {
     defaultExtension: ".html",
   });
 
-  const userRp = Connection.getRepository(User); 
+  const userRp = Connection.getRepository(User);
   const jaminanRp = Connection.getRepository(Jaminan);
+  const pinjamRp = Connection.getRepository(Peminjaman);
   const ambilRp = Connection.getRepository(Pengambilan);
 
   const route = routes(
     new AuthController(userRp),
-    new ScanController(jaminanRp, eta), 
+    new ScanController(jaminanRp, eta),
     new JaminanController(jaminanRp, storage),
+    new PeminjamanController(pinjamRp, jaminanRp, storage),
     new PengambilanController(ambilRp, jaminanRp, storage),
     new StorageController(storage),
   );

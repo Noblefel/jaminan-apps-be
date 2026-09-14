@@ -18,11 +18,13 @@ import type StorageController from "./controller/storage_controller.ts";
 import type ScanController from "./controller/scan_controller.ts";
 import type PengambilanController from "./controller/pengambilan_controller.ts";
 import type { Role } from "./types/user.ts";
+import type PeminjamanController from "./controller/peminjaman_controller.ts";
 
 export const routes = (
   authCt: AuthController,
   scanCt: ScanController,
   jaminanCt: JaminanController,
+  pinjamCt: PeminjamanController,
   ambilCt: PengambilanController,
   storageCt: StorageController,
 ) => {
@@ -47,10 +49,25 @@ export const routes = (
   );
 
   router.post(
+    "/jaminan/:id/pinjam",
+    auth,
+    guard("marketing", "hm", "adm_jaminan"),
+    upload.single("surat_pinjam"),
+    pinjamCt.store,
+  );
+
+  router.post(
     "/jaminan/:id/out",
     auth,
     guard("marketing", "hm", "adm_jaminan"),
     jaminanCt.out,
+  );
+
+  router.get(
+    "/peminjaman",
+    auth,
+    guard("marketing", "adm_jaminan", "adm_external", "adm_internal", "hm"),
+    pinjamCt.get,
   );
 
   router.get(

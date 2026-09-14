@@ -79,7 +79,7 @@ export function validateStoreJaminan(req: Request): StoreJaminanRequest {
   if (b.nik.length > 30) throw HttpError("NIK terlalu panjang", 400);
   if (b.nama.length > 150) throw HttpError("Nama terlalu panjang", 400);
   if (b.nama.length > 250) throw HttpError("Alamat terlalu panjang", 400);
-  return req.body;
+  return b;
 }
 
 interface EditJaminanRequest {
