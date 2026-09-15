@@ -70,6 +70,20 @@ export const routes = (
     pinjamCt.get,
   );
 
+    router.post(
+    "/peminjaman/:id/approve",
+    auth,
+    guard("adm_jaminan", "hm"),
+    pinjamCt.approve,
+  );
+
+  router.post(
+    "/peminjaman/:id/return",
+    auth,
+    guard("adm_jaminan", "hm"),
+    pinjamCt.returning,
+  );
+
   router.get(
     "/pengambilan",
     auth,

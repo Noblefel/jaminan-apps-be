@@ -1,5 +1,9 @@
 import { type Repository } from "typeorm";
-import { Peminjaman, validateStorePeminjaman } from "../types/peminjaman";
+import {
+  Peminjaman,
+  validateApprovePinjam,
+  validateStorePeminjaman,
+} from "../types/peminjaman";
 import type { MinioStorage } from "../utils/storage";
 import type { Request, Response } from "express";
 import type { Jaminan } from "../types/jaminan";
@@ -37,6 +41,12 @@ export default class PeminjamanController {
 
     if (req.query.final) {
       query.andWhere("pinjam.final_approval = :f", { f: req.query.final });
+    }
+
+    if (req.query.kembali) {
+      const v = req.query.kembali;
+      const k = v === "pending" ? null : v === "1";
+      query.andWhere("pinjam.returned is :k", { k });
     }
 
     if (req.query.search) {
@@ -109,5 +119,66 @@ export default class PeminjamanController {
 
     resp.data = await this.repo.save(pinjam);
     return res.json(resp);
+  };
+
+  approve = async (req: Request, res: Response) => {
+    const auth: TokenData = res.locals.auth;
+    const input = validateApprovePinjam(req);
+    const id = req.params.id as any;
+
+    const pinjam = await this.repo.findOne({
+      relations: { barang: true },
+      where: { id },
+    });
+
+    if (!pinjam) throw HttpError("Data pengajuan tidak ditemukan", 404);
+
+    if (pinjam.final_approval != null) {
+      const s = pinjam.final_approval === "approved" ? "diapprove" : "ditolak";
+      throw HttpError(`Pengajuan sudah ${s} final`, 409);
+    }
+
+    // @ts-ignore
+    if (pinjam["approval_" + auth.role] != null)
+      throw HttpError("Tidak bisa approve/reject dua kali", 409);
+
+    // @ts-ignore
+    pinjam["approval_" + auth.role] = input.approval;
+
+    if (input.approval === "rejected" || auth.role === "hm")
+      pinjam.final_approval = input.approval;
+
+    if (pinjam.final_approval === "approved") {
+      pinjam.barang.status = "pinjam";
+      pinjam.returned = false;
+    }
+
+    const data = await this.repo.save(pinjam);
+
+    return res.json({
+      message: "Approval berhasil disimpan. Barang tercatat keluar",
+      data,
+    });
+  };
+
+  returning = async (req: Request, res: Response) => {
+    const id = req.params.id as any;
+
+    const pinjam = await this.repo.findOne({
+      relations: { barang: true },
+      where: { id },
+    });
+
+    if (!pinjam) throw HttpError("Data pengajuan tidak ditemukan", 404);
+
+    if (pinjam.returned) throw HttpError("Barang jaminan sudah kembali", 409);
+
+    if (!pinjam.final_approval || !pinjam.returned === null)
+      throw HttpError("Barang jaminan tidak sedang dipinjam", 409);
+
+    pinjam.returned = true;
+    await this.repo.save(pinjam);
+
+    return res.json({ message: "Barang tercatat kembali" });
   };
 }

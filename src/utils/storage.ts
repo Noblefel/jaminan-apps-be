@@ -36,7 +36,7 @@ export class MinioStorage {
   async put(file: any, ...names: string[]) {
     if (!this.client || !file) return;
 
-    let name = path.join(...names.map((p) => slug(p)));
+    let name = names.map((p) => slug(p)).join("/");
     name += "_" + dayjs().unix();
     name += path.extname(file.originalname);
     await this.client.putObject(config.minioBucket!, name, file.buffer);

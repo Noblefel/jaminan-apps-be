@@ -42,6 +42,9 @@ export class Peminjaman {
   @Column({ type: "enum", enum: ["approved", "rejected"], nullable: true })
   final_approval: Approval; // for easier query check.
 
+  @Column({ type: "bool", nullable: true })
+  returned: boolean;
+
   @CreateDateColumn()
   created_at: Date;
 }
@@ -56,5 +59,16 @@ export function validateStorePeminjaman(req: Request): StorePeminjamanRequest {
   req.body.barang_id = Number(req.body.barang_id);
   if (!dayjs(req.body.jangka_waktu).isValid())
     throw HttpError("format jangka waktu salah", 400);
+  return req.body;
+}
+
+
+interface ApprovePinjamRequest {
+  approval: Approval;
+}
+
+// prettier-ignore
+export function validateApprovePinjam(req: Request): ApprovePinjamRequest{
+  if (!["approved", "rejected"].includes(req.body.approval)) throw HttpError("invalid approval", 400);
   return req.body;
 }
