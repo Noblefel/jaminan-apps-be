@@ -43,10 +43,11 @@ export default class PeminjamanController {
       query.andWhere("pinjam.final_approval = :f", { f: req.query.final });
     }
 
-    if (req.query.kembali) {
-      const v = req.query.kembali;
-      const k = v === "pending" ? null : v === "1";
-      query.andWhere("pinjam.returned is :k", { k });
+    if (req.query.kembali === "pending") {
+      query.andWhere("pinjam.final_approval IS NULL");
+    } else if (req.query.kembali) {
+      const b = req.query.kembali === "1";
+      query.andWhere("pinjam.returned is :b", { b });
     }
 
     if (req.query.search) {
@@ -150,7 +151,7 @@ export default class PeminjamanController {
 
     if (pinjam.final_approval === "approved") {
       pinjam.barang.status = "pinjam";
-      pinjam.returned = false;
+      pinjam.returned_at = new Date();
     }
 
     const data = await this.repo.save(pinjam);
@@ -171,12 +172,13 @@ export default class PeminjamanController {
 
     if (!pinjam) throw HttpError("Data pengajuan tidak ditemukan", 404);
 
-    if (pinjam.returned) throw HttpError("Barang jaminan sudah kembali", 409);
+    if (pinjam.returned_at) throw HttpError("Barang jaminan sudah kembali", 409);
 
-    if (!pinjam.final_approval || !pinjam.returned === null)
+    if (!pinjam.final_approval || !pinjam.returned_at === null)
       throw HttpError("Barang jaminan tidak sedang dipinjam", 409);
 
-    pinjam.returned = true;
+    pinjam.returned_at = new Date();
+    pinjam.barang.status = "brankas";
     await this.repo.save(pinjam);
 
     return res.json({ message: "Barang tercatat kembali" });

@@ -42,8 +42,8 @@ export class Peminjaman {
   @Column({ type: "enum", enum: ["approved", "rejected"], nullable: true })
   final_approval: Approval; // for easier query check.
 
-  @Column({ type: "bool", nullable: true })
-  returned: boolean;
+  @Column({ type: "timestamp", nullable: true })
+  returned_at: Date | null;
 
   @CreateDateColumn()
   created_at: Date;
