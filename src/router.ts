@@ -19,6 +19,7 @@ import type ScanController from "./controller/scan_controller.ts";
 import type PengambilanController from "./controller/pengambilan_controller.ts";
 import type { Role } from "./types/user.ts";
 import type PeminjamanController from "./controller/peminjaman_controller.ts";
+import rateLimit from "express-rate-limit";
 
 export const routes = (
   authCt: AuthController,
@@ -32,6 +33,9 @@ export const routes = (
   router.get("/health", (_, res) => res.send("hello"));
   router.post("/auth/login", authCt.login);
   router.post("/auth/register", authCt.register);
+
+  router.post("/public/jaminan/scan", strict, jaminanCt.publicScan);
+  router.post("/public/jaminan/:id/pinjam", strict, pinjamCt.publicStore);
 
   router.get(
     "/jaminan",
@@ -70,7 +74,7 @@ export const routes = (
     pinjamCt.get,
   );
 
-    router.post(
+  router.post(
     "/peminjaman/:id/approve",
     auth,
     guard("adm_jaminan", "hm"),
@@ -125,6 +129,17 @@ export const routes = (
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+const strict = rateLimit({
+  limit: 20,
+  windowMs: 60 * 1000,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  ipv6Subnet: 56,
+  handler: () => {
+    throw HttpError("Anda terkena rate limit", 429);
+  },
 });
 
 const guard = (...roles: Role[]): RequestHandler => {

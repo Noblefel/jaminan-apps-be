@@ -46,8 +46,9 @@ export default class PeminjamanController {
     if (req.query.kembali === "pending") {
       query.andWhere("pinjam.final_approval IS NULL");
     } else if (req.query.kembali) {
-      const b = req.query.kembali === "1";
-      query.andWhere("pinjam.returned is :b", { b });
+      const b = req.query.kembali === "1" ? "NOT NULL" : "NULL";
+      query.andWhere("pinjam.returned_at is " + b);
+      query.andWhere("pinjam.final_approval IS NOT NULL");
     }
 
     if (req.query.search) {
@@ -154,12 +155,13 @@ export default class PeminjamanController {
       pinjam.returned_at = new Date();
     }
 
-    const data = await this.repo.save(pinjam);
+    const message =
+      pinjam.final_approval === "approved"
+        ? "Approval berhasil disimpan. Barang tercatat keluar"
+        : "Berhasil ditolak. Barang tetap didalam brankas";
 
-    return res.json({
-      message: "Approval berhasil disimpan. Barang tercatat keluar",
-      data,
-    });
+    const data = await this.repo.save(pinjam);
+    return res.json({ data, message });
   };
 
   returning = async (req: Request, res: Response) => {
@@ -172,7 +174,8 @@ export default class PeminjamanController {
 
     if (!pinjam) throw HttpError("Data pengajuan tidak ditemukan", 404);
 
-    if (pinjam.returned_at) throw HttpError("Barang jaminan sudah kembali", 409);
+    if (pinjam.returned_at)
+      throw HttpError("Barang jaminan sudah kembali", 409);
 
     if (!pinjam.final_approval || !pinjam.returned_at === null)
       throw HttpError("Barang jaminan tidak sedang dipinjam", 409);
@@ -182,5 +185,33 @@ export default class PeminjamanController {
     await this.repo.save(pinjam);
 
     return res.json({ message: "Barang tercatat kembali" });
+  };
+
+  publicStore = async (req: Request, res: Response) => {
+    const input = validateStorePeminjaman(req);
+
+    const jaminan = await this.repoJaminan.findOne({
+      relations: { barang: { peminjaman: true } },
+      where: { id: req.params.id as any },
+    });
+    if (!jaminan) throw HttpError("Data jaminan tidak ditemukan", 404);
+
+    const barang = jaminan.barang?.find((b) => b.id == input.barang_id);
+    if (!barang) throw HttpError("Barang tidak ditemukan", 404);
+
+    if (barang.status !== "brankas")
+      throw HttpError("Barang sedang dipinjam atau sudah lunas", 409);
+
+    const pending = barang.peminjaman?.some((p) => p.final_approval == null);
+    if (pending) throw HttpError("Barang ini masih ada pengajuan pending", 409);
+
+    const pinjam = new Peminjaman();
+    pinjam.alasan = input.alasan;
+    pinjam.barang_id = input.barang_id;
+    pinjam.jangka_waktu = new Date(input.jangka_waktu);
+
+    await this.repo.save(pinjam);
+    const m = "Peminjaman berhasil diajukan. Menunggu persetujuan dari staf CG";
+    return res.json({ message: m });
   };
 }

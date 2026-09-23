@@ -20,7 +20,10 @@ export class Peminjaman {
   @Column({ type: "unsigned big int", name: "barang_id" })
   barang_id: number;
 
-  @ManyToOne(() => JaminanBarang, { onDelete: "CASCADE", cascade: ["remove", "update"] })
+  @ManyToOne(() => JaminanBarang, {
+    onDelete: "CASCADE",
+    cascade: ["remove", "update"],
+  })
   @JoinColumn({ name: "barang_id" })
   barang: JaminanBarang;
 
@@ -57,11 +60,14 @@ interface StorePeminjamanRequest {
 
 export function validateStorePeminjaman(req: Request): StorePeminjamanRequest {
   req.body.barang_id = Number(req.body.barang_id);
+  if (!req.body.barang_id || isNaN(req.body.barang_id))
+    throw HttpError("barang id salah", 400);
+  if (!req.body.alasan || req.body.alasan.length < 5)
+    throw HttpError("alasan masih kosong", 400);
   if (!dayjs(req.body.jangka_waktu).isValid())
     throw HttpError("format jangka waktu salah", 400);
   return req.body;
 }
-
 
 interface ApprovePinjamRequest {
   approval: Approval;

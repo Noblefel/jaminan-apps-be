@@ -99,3 +99,13 @@ export function validateEditJaminan(req: Request): EditJaminanRequest {
     throw HttpError("format jangka waktu salah", 400);
   return req.body;
 }
+
+interface PublicScanJaminanRequest {
+  nik: string;
+}
+
+// prettier-ignore
+export function validatePublicScanJaminan(req: Request): PublicScanJaminanRequest {
+  if (req.body.nik?.length !== 16) throw HttpError("format nik tidak benar", 400);
+  return req.body 
+}

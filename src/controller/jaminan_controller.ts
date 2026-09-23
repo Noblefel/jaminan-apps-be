@@ -8,6 +8,7 @@ import { Pagination } from "../utils/pagination";
 import type { MinioStorage } from "../utils/storage";
 import {
   Jaminan,
+  validatePublicScanJaminan,
   validateStoreJaminan,
   type ClientType,
 } from "../types/jaminan";
@@ -121,16 +122,35 @@ export default class JaminanController {
   // };
 
   out = async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
-    const jaminan = await this.repo.findOne({ where: { id } });
-    if (!jaminan) throw HttpError("data tidak ditemukan", 404);
+    // const id = Number(req.params.id);
+    // const jaminan = await this.repo.findOne({ where: { id } });
+    // if (!jaminan) throw HttpError("data tidak ditemukan", 404);
+    // if (jaminan.status != "ambil")
+    //   throw HttpError("barang belum ada acc pengambilan", 403);
+    // jaminan.status = "lunas";
+    // jaminan.barang_keluar = new Date();
+    // await this.repo.save(jaminan);
+    // return res.json({ message: "Barang berhasil diserahkan" });
+  };
 
-    if (jaminan.status != "ambil")
-      throw HttpError("barang belum ada acc pengambilan", 403);
+  publicScan = async (req: Request, res: Response) => {
+    const input = validatePublicScanJaminan(req);
 
-    jaminan.status = "lunas";
-    jaminan.barang_keluar = new Date();
-    await this.repo.save(jaminan);
-    return res.json({ message: "Barang berhasil diserahkan" });
+    const jaminan = await this.repo
+      .createQueryBuilder("jaminan")
+      .leftJoinAndSelect("jaminan.barang", "barang")
+      .leftJoinAndSelect("barang.peminjaman", "peminjaman")
+      .where("jaminan.nik = :n", { n: input.nik })
+      .andWhere("barang.status != 'selesai'")
+      .getMany();
+
+    if (!jaminan.length) {
+      throw HttpError(
+        "Data nasabah tidak ditemukan. Cek ulang NIK apakah sudah sesuai",
+        404,
+      );
+    }
+
+    return res.json({ data: jaminan });
   };
 }
