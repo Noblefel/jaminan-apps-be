@@ -88,15 +88,21 @@ export default class JaminanController {
   };
 
   out = async (req: Request, res: Response) => {
-    // const id = Number(req.params.id);
-    // const jaminan = await this.repo.findOne({ where: { id } });
-    // if (!jaminan) throw HttpError("data tidak ditemukan", 404);
-    // if (jaminan.status != "ambil")
-    //   throw HttpError("barang belum ada acc pengambilan", 403);
-    // jaminan.status = "lunas";
-    // jaminan.barang_keluar = new Date();
-    // await this.repo.save(jaminan);
-    // return res.json({ message: "Barang berhasil diserahkan" });
+    const jaminan = await this.repo.findOne({
+      where: { id: Number(req.params.id) },
+      relations: { barang: true },
+    });
+    if (!jaminan) throw HttpError("data tidak ditemukan", 404);
+
+    if (!jaminan.awaiting_return)
+      throw HttpError("barang belum ada acc pengambilan", 403);
+
+    jaminan.awaiting_return = false;
+    jaminan.barang_keluar = new Date();
+    jaminan.barang?.forEach((b) => (b.status = "selesai"));
+    await this.repo.save(jaminan);
+
+    return res.json({ message: "Barang berhasil diserahkan" });
   };
 
   publicScan = async (req: Request, res: Response) => {

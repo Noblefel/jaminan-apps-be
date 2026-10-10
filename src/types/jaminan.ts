@@ -20,6 +20,9 @@ export class Jaminan {
   @Column({ type: "varchar", length: 120, unique: true })
   uuid: string; // for qr
 
+  @Column({ type: "boolean", default: false })
+  awaiting_return: boolean;
+
   @Column({ type: "timestamp", nullable: true })
   barang_keluar: Date;
 
@@ -45,7 +48,7 @@ export class Jaminan {
   id_card: string;
 
   @OneToMany(() => JaminanBarang, (barang) => barang.jaminan, {
-    cascade: ["insert"],
+    cascade: ["insert", "update"],
   })
   barang?: JaminanBarang[];
 }

@@ -91,14 +91,10 @@ export default class PengambilanController {
     if (jaminan.barang?.some((b) => b.status === "pinjam"))
       throw HttpError("Barang masih ada yang dipinjam", 409);
 
-    // TODO: combine this query into repoJaminan query above
-
-    const waiting = await this.repo.exists({
-      where: { jaminan_id: input.jaminan_id, final_approval: "approved" },
-    });
-    if (waiting)
+    if (jaminan.awaiting_return)
       throw HttpError("Pengajuan sudah di acc, menunggu pengambilan", 409);
 
+    // TODO: combine this query into repoJaminan query above
     const pending = await this.repo.exists({
       where: { jaminan_id: input.jaminan_id, final_approval: IsNull() },
     });
@@ -149,7 +145,7 @@ export default class PengambilanController {
     const id = req.params.id as any;
 
     const ambil = await this.repo.findOne({
-      relations: { jaminan: { client: true } },
+      relations: { jaminan: true },
       where: { id },
     });
 
@@ -160,10 +156,10 @@ export default class PengambilanController {
       throw HttpError(`Pengajuan sudah ${s} final`, 409);
     }
 
-    if (auth.role === "adm_external" && ambil.jaminan.client.tipe == "internal")
+    if (auth.role === "adm_external" && ambil.jaminan.tipe == "internal")
       throw HttpError("Pengajuan ini khusus admin internal", 403);
 
-    if (auth.role === "adm_internal" && ambil.jaminan.client.tipe == "external")
+    if (auth.role === "adm_internal" && ambil.jaminan.tipe == "external")
       throw HttpError("Pengajuan ini khusus admin external", 403);
 
     // @ts-ignore
@@ -180,9 +176,15 @@ export default class PengambilanController {
     if (input.approval === "rejected" || auth.role === "hm")
       ambil.final_approval = input.approval;
 
-    if (ambil.final_approval === "approved") ambil.jaminan.status = "ambil";
+    if (ambil.final_approval === "approved")
+      ambil.jaminan.awaiting_return = true;
+
+    const message =
+      ambil.final_approval === "approved"
+        ? "Pengajuan berhasil di acc, tinggal menunggu pengambilan"
+        : "Data approval berhasil disimpan";
 
     const data = await this.repo.save(ambil);
-    return res.json({ message: "Data approval berhasil disimpan", data });
+    return res.json({ message, data });
   };
 }

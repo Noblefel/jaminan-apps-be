@@ -11,7 +11,6 @@ import type { TokenData } from "../types/auth";
 import { HttpError } from "../types/error";
 import { Pagination } from "../utils/pagination";
 import type { Role } from "../types/user";
-import dayjs from "dayjs";
 
 export default class PeminjamanController {
   constructor(
@@ -79,6 +78,9 @@ export default class PeminjamanController {
       where: { id: req.params.id as any },
     });
     if (!jaminan) throw HttpError("Data jaminan tidak ditemukan", 404);
+
+    if (jaminan.awaiting_return)
+      throw HttpError("Jaminan ini sedang menunggu pengambilan", 404);
 
     const barang = jaminan.barang?.find((b) => b.id == input.barang_id);
     if (!barang) throw HttpError("Barang tidak ditemukan", 404);
