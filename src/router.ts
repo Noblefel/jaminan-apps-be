@@ -99,7 +99,7 @@ export const routes = (
     "/pengambilan",
     auth,
     guard("marketing", "hm"),
-    upload.fields([{ name: "foto_bast" }]),
+    upload.single("foto_bast"),
     ambilCt.store,
   );
 
@@ -107,7 +107,7 @@ export const routes = (
     "/pengambilan/:id",
     auth,
     guard("marketing", "hm"),
-    upload.fields([{ name: "foto_bast" }]),
+    upload.single("foto_bast"),
     ambilCt.put,
   );
 

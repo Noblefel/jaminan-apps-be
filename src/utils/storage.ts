@@ -50,7 +50,8 @@ export class MinioStorage {
   }
 
   async delete(...path: string[]) {
-    if (!this.client || !path.length) return;
-    await this.client.removeObject(config.minioBucket!, path.join("/"));
+    const url = path?.join('/');
+    if (!this.client || !url || !url.length) return;
+    await this.client.removeObject(config.minioBucket!, url);
   }
 }

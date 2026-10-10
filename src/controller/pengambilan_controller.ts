@@ -27,17 +27,17 @@ export default class PengambilanController {
     const query = this.repo
       .createQueryBuilder("ambil")
       .leftJoinAndSelect("ambil.jaminan", "jaminan")
-      .leftJoinAndSelect("jaminan.client", "client")
+      .leftJoinAndSelect("jaminan.barang", "barang")
       .orderBy("ambil.created_at", "DESC")
       .offset(pagination.offset)
       .limit(pagination.limit);
 
     if (req.query.barang) {
-      query.andWhere("jaminan.barang = :b", { b: req.query.barang });
+      query.andWhere("barang.barang = :b", { b: req.query.barang });
     }
 
     if (req.query.tipe) {
-      query.andWhere("client.tipe = :t", { t: req.query.tipe });
+      query.andWhere("jaminan.tipe = :t", { t: req.query.tipe });
     }
 
     if (req.query.final) {
@@ -46,7 +46,7 @@ export default class PengambilanController {
 
     if (req.query.search) {
       const like = { s: "%" + (req.query.search as string).trim() + "%" };
-      query.andWhere("(client.nama LIKE :s OR client.nik LIKE :s)", like);
+      query.andWhere("(jaminan.nama LIKE :s OR jaminan.nik LIKE :s)", like);
     }
 
     // prettier-ignore
@@ -77,32 +77,39 @@ export default class PengambilanController {
 
   store = async (req: Request, res: Response) => {
     const input = validateStorePengambilan(req);
-    const files = req.files as any;
 
     const jaminan = await this.repoJaminan.findOne({
       where: { id: input.jaminan_id },
+      relations: { barang: true },
     });
 
     if (!jaminan) throw HttpError("Data jaminan tidak ditemukan", 404);
 
-    if (jaminan.status === "lunas")
+    if (jaminan.barang_keluar)
       throw HttpError("Jaminan ini sudah lunas/diserahkan", 409);
 
-    if (jaminan.status === "ambil")
+    if (jaminan.barang?.some((b) => b.status === "pinjam"))
+      throw HttpError("Barang masih ada yang dipinjam", 409);
+
+    // TODO: combine this query into repoJaminan query above
+
+    const waiting = await this.repo.exists({
+      where: { jaminan_id: input.jaminan_id, final_approval: "approved" },
+    });
+    if (waiting)
       throw HttpError("Pengajuan sudah di acc, menunggu pengambilan", 409);
 
     const pending = await this.repo.exists({
       where: { jaminan_id: input.jaminan_id, final_approval: IsNull() },
     });
-
     if (pending)
       throw HttpError("Jaminan ini masih ada pengajuan pending", 409);
 
     const pengambilan = new Pengambilan();
     pengambilan.jaminan_id = input.jaminan_id;
 
-    if (files["foto_bast"]) {
-      const f = await this.storage.put(req, "foto_bast", jaminan!.uuid);
+    if (req.file) {
+      const f = await this.storage.put(req.file, "foto_bast", jaminan!.uuid);
       pengambilan.foto_bast = f!;
     }
 
@@ -114,7 +121,6 @@ export default class PengambilanController {
   put = async (req: Request, res: Response) => {
     const input = validateEditPengambilan(req);
     const id = req.params.id as any;
-    const files = req.files as any;
 
     const ambil = await this.repo.findOne({
       relations: { jaminan: true },
@@ -123,12 +129,13 @@ export default class PengambilanController {
 
     if (!ambil) throw HttpError("Data pengajuan tidak ditemukan", 404);
 
-    if (files["foto_bast"]) {
-      await this.storage.delete(ambil.foto_bast);
-      const f = await this.storage.put(req, "foto_bast", ambil.jaminan.uuid);
+    // prettier-ignore
+    if (req.file) {
+      await this.storage.delete(ambil.foto_bast!);
+      const f = await this.storage.put(req.file, "foto_bast", ambil.jaminan.uuid)
       ambil.foto_bast = f!;
-    } else if (input.foto_bast === null) {
-      await this.storage.delete(ambil.foto_bast);
+    } else if (!input.foto_bast) {
+      await this.storage.delete(ambil.foto_bast!);
       ambil.foto_bast = null;
     }
 
@@ -158,15 +165,17 @@ export default class PengambilanController {
 
     if (auth.role === "adm_internal" && ambil.jaminan.client.tipe == "external")
       throw HttpError("Pengajuan ini khusus admin external", 403);
- 
+
     // @ts-ignore
     if (ambil["approval_" + auth.role] != null)
       throw HttpError("Tidak bisa approve/reject dua kali", 409);
- 
+
     // @ts-ignore
     ambil["approval_" + auth.role] = input.approval;
-    if (auth.role === "adm_internal") ambil["ket_adm_internal"] = input.keterangan;     
-    if (auth.role === "adm_external") ambil["ket_adm_external"] = input.keterangan;     
+    if (auth.role === "adm_internal")
+      ambil["ket_adm_internal"] = input.keterangan;
+    if (auth.role === "adm_external")
+      ambil["ket_adm_external"] = input.keterangan;
 
     if (input.approval === "rejected" || auth.role === "hm")
       ambil.final_approval = input.approval;

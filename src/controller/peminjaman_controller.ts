@@ -123,6 +123,59 @@ export default class PeminjamanController {
     return res.json(resp);
   };
 
+    put = async (req: Request, res: Response) => {
+    const input = validateStorePeminjaman(req);
+
+    const jaminan = await this.repoJaminan.findOne({
+      relations: { barang: { peminjaman: true } },
+      where: { id: req.params.id as any },
+    });
+    if (!jaminan) throw HttpError("Data jaminan tidak ditemukan", 404);
+
+    const barang = jaminan.barang?.find((b) => b.id == input.barang_id);
+    if (!barang) throw HttpError("Barang tidak ditemukan", 404);
+
+    if (barang.status !== "brankas")
+      throw HttpError("Barang sedang dipinjam atau sudah lunas", 409);
+
+    const pending = barang.peminjaman?.some((p) => p.final_approval == null);
+    if (pending) throw HttpError("Barang ini masih ada pengajuan pending", 409);
+
+    const pinjam = new Peminjaman();
+    pinjam.alasan = input.alasan;
+    pinjam.barang_id = input.barang_id;
+    pinjam.jangka_waktu = new Date(input.jangka_waktu);
+
+    if (req.file) {
+      pinjam.surat_pinjam = (await this.storage.put(
+        req.file,
+        jaminan.nama,
+        "surat_pinjam",
+        barang.barang,
+      ))!;
+    }
+
+    const auth: TokenData = res.locals.auth;
+    const resp: any = {};
+
+    if (auth.role === "hm") {
+      pinjam.approval_hm = "approved";
+      pinjam.final_approval = "approved";
+      resp.message = "Peminjaman berhasil. (HM) Otomatis approve";
+
+      barang.status = "pinjam";
+      pinjam.barang = barang; // cascade update
+    } else if (auth.role === "adm_jaminan") {
+      pinjam.approval_adm_jaminan = "approved";
+      resp.message = "Peminjaman diajukan. Tunggu approval HM";
+    } else {
+      resp.message = "Peminjaman diajukan. Tunggu approval admin jaminan & HM";
+    }
+
+    resp.data = await this.repo.save(pinjam);
+    return res.json(resp);
+  };
+
   approve = async (req: Request, res: Response) => {
     const auth: TokenData = res.locals.auth;
     const input = validateApprovePinjam(req);
