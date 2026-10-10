@@ -33,8 +33,11 @@ export class Peminjaman {
   @Column({ type: "varchar", length: 1500, nullable: true })
   alasan: string;
 
-  @Column({ type: "timestamp" })
-  jangka_waktu: Date;
+  @Column({ type: "date", nullable: true })
+  borrow_start: Date;
+
+  @Column({ type: "date", nullable: true })
+  borrow_end: Date;
 
   @Column({ type: "enum", enum: ["approved", "rejected"], nullable: true })
   approval_adm_jaminan: Approval;
@@ -55,7 +58,8 @@ export class Peminjaman {
 interface StorePeminjamanRequest {
   barang_id: number;
   alasan: string;
-  jangka_waktu: string;
+  borrow_start: string;
+  borrow_end: string;
 }
 
 export function validateStorePeminjaman(req: Request): StorePeminjamanRequest {
@@ -64,7 +68,11 @@ export function validateStorePeminjaman(req: Request): StorePeminjamanRequest {
     throw HttpError("barang id salah", 400);
   if (!req.body.alasan || req.body.alasan.length < 5)
     throw HttpError("alasan masih kosong", 400);
-  if (!dayjs(req.body.jangka_waktu).isValid())
+  if (!dayjs(req.body.borrow_start).isValid())
+    throw HttpError("format jangka waktu salah", 400);
+  if (!dayjs(req.body.borrow_end).isValid())
+    throw HttpError("format jangka waktu salah", 400);
+  if (dayjs(req.body.borrow_start).isAfter(req.body.borrow_end))
     throw HttpError("format jangka waktu salah", 400);
   return req.body;
 }

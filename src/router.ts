@@ -15,7 +15,6 @@ import type { TokenData } from "./types/auth.ts";
 import type AuthController from "./controller/auth_controller.ts";
 import type JaminanController from "./controller/jaminan_controller.ts";
 import type StorageController from "./controller/storage_controller.ts";
-import type ScanController from "./controller/scan_controller.ts";
 import type PengambilanController from "./controller/pengambilan_controller.ts";
 import type { Role } from "./types/user.ts";
 import type PeminjamanController from "./controller/peminjaman_controller.ts";
@@ -23,7 +22,6 @@ import rateLimit from "express-rate-limit";
 
 export const routes = (
   authCt: AuthController,
-  scanCt: ScanController,
   jaminanCt: JaminanController,
   pinjamCt: PeminjamanController,
   ambilCt: PengambilanController,
@@ -118,7 +116,6 @@ export const routes = (
     ambilCt.approve,
   );
 
-  router.get("/scan/:uuid", scanCt.scanPublic);
   router.get("/storage/*path", storageCt.get);
   router.use(error);
   return router;

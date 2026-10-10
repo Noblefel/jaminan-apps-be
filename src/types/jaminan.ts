@@ -82,24 +82,6 @@ export function validateStoreJaminan(req: Request): StoreJaminanRequest {
   return b;
 }
 
-interface EditJaminanRequest {
-  id: number;
-  barang: string;
-  alasan: string;
-  jangka_waktu: string;
-  foto_jaminan: Object | string;
-  foto_surat_pinjam: Object | string;
-}
-
-// prettier-ignore
-export function validateEditJaminan(req: Request): EditJaminanRequest {
-  if (!req.body.barang || !req.body.alasan || !req.body.jangka_waktu)
-    throw HttpError("input jaminan masih ada yang kosong", 400);
-  if (!dayjs(req.body.jangka_waktu).isValid())
-    throw HttpError("format jangka waktu salah", 400);
-  return req.body;
-}
-
 interface PublicScanJaminanRequest {
   nik: string;
 }

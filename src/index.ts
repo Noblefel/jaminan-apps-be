@@ -16,7 +16,6 @@ import { Peminjaman } from "./types/peminjaman.ts";
 import AuthController from "./controller/auth_controller.ts";
 import StorageController from "./controller/storage_controller.ts";
 import JaminanController from "./controller/jaminan_controller.ts";
-import ScanController from "./controller/scan_controller.ts";
 import PengambilanController from "./controller/pengambilan_controller.ts";
 import PeminjamanController from "./controller/peminjaman_controller.ts";
 
@@ -39,7 +38,6 @@ async function start() {
 
   const route = routes(
     new AuthController(userRp),
-    new ScanController(jaminanRp, eta),
     new JaminanController(jaminanRp, storage),
     new PeminjamanController(pinjamRp, jaminanRp, storage),
     new PengambilanController(ambilRp, jaminanRp, storage),
