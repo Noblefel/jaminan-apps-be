@@ -45,7 +45,7 @@ export const routes = (
   router.post(
     "/jaminan",
     auth,
-    guard("marketing", "hm"),
+    guard("marketing", "adm_jaminan"),
     upload.array("foto[]", 5),
     jaminanCt.store,
   );
@@ -61,14 +61,14 @@ export const routes = (
   router.post(
     "/jaminan/:id/out",
     auth,
-    guard("marketing", "hm", "adm_jaminan"),
+    guard("hm", "adm_jaminan"),
     jaminanCt.out,
   );
 
   router.get(
     "/peminjaman",
     auth,
-    guard("marketing", "adm_jaminan", "adm_external", "adm_internal", "hm"),
+    guard("marketing", "adm_jaminan", "hm"),
     pinjamCt.get,
   );
 
@@ -96,7 +96,7 @@ export const routes = (
   router.post(
     "/pengambilan",
     auth,
-    guard("marketing", "hm"),
+    guard("marketing", "adm_jaminan", "hm"),
     upload.single("foto_bast"),
     ambilCt.store,
   );
@@ -104,7 +104,7 @@ export const routes = (
   router.put(
     "/pengambilan/:id",
     auth,
-    guard("marketing", "hm"),
+    guard("marketing", "adm_jaminan", "hm"),
     upload.single("foto_bast"),
     ambilCt.put,
   );

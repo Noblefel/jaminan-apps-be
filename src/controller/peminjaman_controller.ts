@@ -11,6 +11,7 @@ import type { TokenData } from "../types/auth";
 import { HttpError } from "../types/error";
 import { Pagination } from "../utils/pagination";
 import type { Role } from "../types/user";
+import dayjs from "dayjs";
 
 export default class PeminjamanController {
   constructor(
@@ -161,7 +162,7 @@ export default class PeminjamanController {
 
     const message =
       pinjam.final_approval === "approved"
-        ? "Approval berhasil disimpan. Barang tercatat keluar"
+        ? `Approval berhasil disimpan. Barang tercatat keluar pada ${dayjs(pinjam.borrow_start).format("DD MMMM")}`
         : "Berhasil ditolak. Barang tetap didalam brankas";
 
     const data = await this.repo.save(pinjam);

@@ -55,12 +55,12 @@ export default class PengambilanController {
       query.andWhere("ambil.approval_adm_jaminan = 'approved'");
       query.andWhere("(ambil.approval_adm_internal = 'approved' OR ambil.approval_adm_external = 'approved')");
     } else if (role === "adm_internal") {
-      query.andWhere("client.tipe = 'internal'");
+      query.andWhere("jaminan.tipe = 'internal'");
       query.andWhere("ambil.final_approval IS NULL");
       query.andWhere("ambil.approval_adm_internal IS NULL");
       query.andWhere("ambil.approval_adm_jaminan = 'approved'");
     } else if (role === "adm_external") {
-      query.andWhere("client.tipe = 'external'");
+      query.andWhere("jaminan.tipe = 'external'");
       query.andWhere("ambil.final_approval IS NULL");
       query.andWhere("ambil.approval_adm_external IS NULL");
       query.andWhere("ambil.approval_adm_jaminan = 'approved'");
@@ -79,8 +79,8 @@ export default class PengambilanController {
     const input = validateStorePengambilan(req);
 
     const jaminan = await this.repoJaminan.findOne({
+      relations: { barang: { peminjaman: true } },
       where: { id: input.jaminan_id },
-      relations: { barang: true },
     });
 
     if (!jaminan) throw HttpError("Data jaminan tidak ditemukan", 404);
@@ -88,11 +88,14 @@ export default class PengambilanController {
     if (jaminan.barang_keluar)
       throw HttpError("Jaminan ini sudah lunas/diserahkan", 409);
 
+    if (jaminan.awaiting_return)
+      throw HttpError("Pengajuan sudah di acc, menunggu pengambilan", 409);
+
     if (jaminan.barang?.some((b) => b.status === "pinjam"))
       throw HttpError("Barang masih ada yang dipinjam", 409);
 
-    if (jaminan.awaiting_return)
-      throw HttpError("Pengajuan sudah di acc, menunggu pengambilan", 409);
+    if (jaminan.barang?.some((b) => b.peminjaman?.some((p) => !p.final_approval)))
+      throw HttpError("Barang masih ada pengajuan pinjam", 409);
 
     // TODO: combine this query into repoJaminan query above
     const pending = await this.repo.exists({

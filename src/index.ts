@@ -1,10 +1,8 @@
 import "reflect-metadata";
 import e from "express";
 import cors from "cors";
-import path from "node:path";
 import dayjs from "dayjs";
 import id from "dayjs/locale/id";
-import { Eta } from "eta";
 import { config } from "./config.ts";
 import { Connection } from "./connection.ts";
 import { routes } from "./router.ts";
@@ -25,11 +23,6 @@ async function start() {
 
   const storage = new MinioStorage(config.storage);
   await storage.createBucket();
-
-  const eta = new Eta({
-    views: path.join(import.meta.dirname, "templates"),
-    defaultExtension: ".html",
-  });
 
   const userRp = Connection.getRepository(User);
   const jaminanRp = Connection.getRepository(Jaminan);
