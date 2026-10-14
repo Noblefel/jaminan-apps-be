@@ -1,19 +1,14 @@
 {
   "compilerOptions": {
     // File Layout
-    // "rootDir": "./src",
-    // "outDir": "./dist",
+    "rootDir": "./src",
+    "outDir": "./dist",
 
     "module": "esnext",
     // "moduleResolution": "bundler",
     // "target": "esnext",
     "allowImportingTsExtensions": true,
-    "rewriteRelativeImportExtensions": true, 
-
-    // Other Outputs
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
+    "rewriteRelativeImportExtensions": true,
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
@@ -24,12 +19,14 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
-    "moduleDetection": "force", 
+    "moduleDetection": "force",
     "skipLibCheck": true,
-    
+
     // typeORM
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "strictPropertyInitialization": false,
-  }
+    "strictPropertyInitialization": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
